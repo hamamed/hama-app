@@ -11,13 +11,8 @@
     <access origin="*" />
     <preference name="DisallowOverscroll" value="true" />
     <preference name="Orientation" value="portrait" />
-    <preference name="BackgroundColor" value="0xFFF4F5F8" />
-    <preference name="StatusBarOverlaysWebView" value="false" />
-    <preference name="StatusBarBackgroundColor" value="#FFFFFF" />
-    <preference name="StatusBarStyle" value="default" />
     <preference name="AndroidPersistentFileLocation" value="Compatible" />
     <preference name="MixedContentMode" value="0" />
     <platform name="android">
-        <preference name="AndroidWindowSplashScreenBackgroundColor" value="#FFFFFF" />
     </platform>
 </widget>
