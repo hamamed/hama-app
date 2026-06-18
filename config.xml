@@ -18,6 +18,8 @@
     <preference name="AndroidPersistentFileLocation" value="Compatible" />
     <preference name="MixedContentMode" value="0" />
     <platform name="android">
-        <preference name="AndroidWindowSplashScreenBackgroundColor" value="#FFF4F5F8" />
+        <icon src="res/icon.png" />
+        <preference name="AndroidWindowSplashScreenBackgroundColor" value="#FFFFFF" />
+        <preference name="AndroidWindowSplashScreenAnimatedIcon" value="res/splash.png" />
     </platform>
 </widget>
