@@ -28,6 +28,11 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
+      - name: Install pinned SDK packages (34 / build-tools 34.0.0)
+        run: |
+          yes | sdkmanager "platforms;android-34" "build-tools;34.0.0" || true
+          yes | sdkmanager --licenses || true
+
       - name: Install Cordova
         run: npm install -g cordova
 
@@ -35,7 +40,10 @@ jobs:
         run: cordova platform add android@13
 
       - name: Build debug APK
-        run: cordova build android --verbose
+        run: >
+          cordova build android --verbose --
+          --gradleArg=-PcdvCompileSdkVersion=34
+          --gradleArg=-PcdvBuildToolsVersion=34.0.0
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
