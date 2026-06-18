@@ -65,6 +65,15 @@
       b.addEventListener("click", () => go(b.dataset.tab)));
   }
   function loadingBody() { return '<div class="empty"><i class="fa-solid fa-futbol fa-spin"></i>' + esc(t("loading")) + '</div>'; }
+  function howHtml() {
+    const items = [
+      ["fa-pen", "how.predict"], ["fa-lock", "how.lock"], ["fa-bullseye", "how.exact"],
+      ["fa-check-double", "how.outcome"], ["fa-xmark", "how.wrong"], ["fa-crown", "how.champion"],
+    ];
+    return '<div class="card how-card"><h6 class="howt"><i class="fa-solid fa-circle-info"></i> ' + esc(t("how.title")) + '</h6>' +
+      items.map((it) => '<div class="howrow"><i class="fa-solid ' + it[0] + '"></i><span>' + esc(t(it[1])) + '</span></div>').join("") +
+      '</div>';
+  }
 
   // ---------- navigation ----------
   function go(tab) {
@@ -126,9 +135,13 @@
       chip("all", t("day.all"), matches.length) +
       days.map((k) => chip(k, dayLabel(k), counts[k])).join("") + '</div>';
 
-    setBody('<h2 class="h2">' + esc(t("nav.fixtures")) + '</h2>' + daysHtml + '<div id="list"></div>');
+    setBody('<h2 class="h2">' + esc(t("nav.fixtures")) + '</h2>' + daysHtml + '<div id="list"></div>' + howHtml());
 
     const list = document.getElementById("list");
+    function centerActive(smooth) {
+      const a = document.querySelector("#days .chip.active");
+      if (a) a.scrollIntoView({ inline: "center", block: "nearest", behavior: smooth ? "smooth" : "auto" });
+    }
     function paint() {
       const vis = matches.filter((m) => sel === "all" || m._day === sel);
       list.innerHTML = vis.map(matchCard).join("") || '<div class="empty">' + esc(t("noFixtures")) + '</div>';
@@ -137,8 +150,10 @@
         c.classList.toggle("active", c.dataset.day === sel));
     }
     document.querySelectorAll("#days .chip").forEach((c) =>
-      c.addEventListener("click", () => { sel = c.dataset.day; paint(); c.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" }); }));
+      c.addEventListener("click", () => { sel = c.dataset.day; paint(); centerActive(true); }));
     paint();
+    // Center the selected day on load so it's visible without scrolling.
+    requestAnimationFrame(() => centerActive(false));
 
     // live auto-refresh
     if (matches.some((m) => m.badge === "live")) {

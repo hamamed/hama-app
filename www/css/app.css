@@ -71,8 +71,15 @@ select.input { appearance: none; }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
 
 /* day chips */
-.days { display: flex; gap: 8px; overflow-x: auto; padding: 4px 0 10px; scrollbar-width: none; }
+.days { display: flex; gap: 8px; overflow-x: auto; padding: 4px 0 10px; scrollbar-width: none; scroll-padding-inline: 50%; }
 .days::-webkit-scrollbar { display: none; }
+
+/* How it works card */
+.how-card { padding: 14px; margin-top: 16px; background: linear-gradient(180deg, var(--surface-2), var(--surface)); }
+.howt { font-weight: 900; margin: 0 0 10px; font-size: 1rem; }
+.howt i { color: var(--accent); margin-inline-end: 6px; }
+.howrow { display: flex; gap: 8px; align-items: flex-start; font-size: .85rem; padding: 5px 0; }
+.howrow i { color: var(--accent); margin-top: 3px; flex: 0 0 auto; }
 .chip { flex: 0 0 auto; border: 1px solid var(--line); background: var(--surface); border-radius: 14px; padding: 8px 12px; text-align: center; min-width: 84px; }
 .chip .m { font-weight: 900; font-size: .9rem; }
 .chip .s { font-size: .7rem; color: var(--muted); font-weight: 700; }
