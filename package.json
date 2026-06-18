@@ -1,0 +1,17 @@
+{
+  "name": "com.hama.worldcup",
+  "displayName": "HAMA WC 2026",
+  "version": "1.0.0",
+  "description": "World Cup 2026 Predictor — Android app (Cordova client for the HAMA API).",
+  "license": "MIT",
+  "devDependencies": {
+    "cordova": "^12.0.0",
+    "cordova-android": "^13.0.0"
+  },
+  "cordova": {
+    "platforms": [
+      "android"
+    ],
+    "plugins": {}
+  }
+}

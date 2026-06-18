@@ -1,0 +1,85 @@
+/* App translations (EN/FR/AR). Country names come already-localized from the API. */
+window.I18N = (function () {
+  const en = {
+    appName: "HAMA WC 2026",
+    "login.tagline": "Predict the scores. Climb the leaderboard.",
+    "login.enter": "Enter your username", "login.placeholder": "your_username",
+    "login.play": "Play", "login.hint": "3-20 characters · letters, numbers, _ and -",
+    "login.invalid": "Username must be 3-20 chars (letters, numbers, _ or -).",
+    "nav.fixtures": "Fixtures", "nav.groups": "Groups", "nav.ranks": "Ranks", "nav.profile": "Profile",
+    vs: "VS", pts: "pts", loading: "Loading…", netErr: "Network error",
+    "badge.open": "Open", "badge.locked": "Locked", "badge.live": "LIVE", "badge.completed": "Completed",
+    "day.all": "All", "day.today": "Today", "day.yesterday": "Yesterday", "day.tomorrow": "Tomorrow",
+    "day.matches": "matches", "day.match": "match",
+    save: "Save Prediction", update: "Update Prediction", saved: "Saved!", locked: "Locked", invalid: "Invalid score",
+    yourPick: "Your pick", noFixtures: "No fixtures yet.",
+    "lb.title": "Leaderboard", "lb.rank": "Rank", "lb.player": "Player", "lb.points": "Points", "lb.you": "You", "lb.empty": "No players yet.",
+    "st.title": "Groups & Standings", "st.team": "Team", "st.none": "No standings yet.",
+    "st.p": "P", "st.w": "W", "st.d": "D", "st.l": "L", "st.gd": "GD", "st.pts": "Pts",
+    "st.bestThirds": "Best 3rd-Placed", "st.qualifies": "Qualifies",
+    "profile.title": "Profile", "profile.logout": "Logout",
+    "stat.totalPoints": "Total Points", "stat.exact": "Exact", "stat.outcomes": "Outcomes", "stat.hitRate": "Hit Rate",
+    "champ.title": "Predict the Champion", "champ.choose": "Choose a country…", "champ.save": "Save Pick",
+    "champ.locked": "Locked", "champ.locksIn": "Locks in", "champ.current": "Current pick:",
+    "champ.actual": "Actual champion:", "champ.correct": "Correct — bonus earned! 🏆", "champ.wrong": "Wrong pick.",
+    "hist.title": "History", "hist.none": "No predictions yet.",
+  };
+  const fr = {
+    appName: "HAMA WC 2026",
+    "login.tagline": "Pronostiquez les scores. Grimpez au classement.",
+    "login.enter": "Entrez votre nom d'utilisateur", "login.placeholder": "votre_nom",
+    "login.play": "Jouer", "login.hint": "3 à 20 caractères · lettres, chiffres, _ et -",
+    "login.invalid": "Nom invalide (3-20 caractères : lettres, chiffres, _ ou -).",
+    "nav.fixtures": "Matchs", "nav.groups": "Groupes", "nav.ranks": "Classement", "nav.profile": "Profil",
+    vs: "VS", pts: "pts", loading: "Chargement…", netErr: "Erreur réseau",
+    "badge.open": "Ouvert", "badge.locked": "Verrouillé", "badge.live": "EN DIRECT", "badge.completed": "Terminé",
+    "day.all": "Tous", "day.today": "Aujourd'hui", "day.yesterday": "Hier", "day.tomorrow": "Demain",
+    "day.matches": "matchs", "day.match": "match",
+    save: "Enregistrer", update: "Modifier", saved: "Enregistré !", locked: "Verrouillé", invalid: "Score invalide",
+    yourPick: "Votre choix", noFixtures: "Aucun match.",
+    "lb.title": "Classement", "lb.rank": "Rang", "lb.player": "Joueur", "lb.points": "Points", "lb.you": "Vous", "lb.empty": "Aucun joueur.",
+    "st.title": "Groupes", "st.team": "Équipe", "st.none": "Aucun classement.",
+    "st.p": "J", "st.w": "G", "st.d": "N", "st.l": "P", "st.gd": "Diff", "st.pts": "Pts",
+    "st.bestThirds": "Meilleurs 3es", "st.qualifies": "Qualifié",
+    "profile.title": "Profil", "profile.logout": "Déconnexion",
+    "stat.totalPoints": "Points", "stat.exact": "Exacts", "stat.outcomes": "Résultats", "stat.hitRate": "Réussite",
+    "champ.title": "Pronostiquez le champion", "champ.choose": "Choisissez un pays…", "champ.save": "Enregistrer",
+    "champ.locked": "Verrouillé", "champ.locksIn": "Dans", "champ.current": "Choix actuel :",
+    "champ.actual": "Champion réel :", "champ.correct": "Correct — bonus ! 🏆", "champ.wrong": "Mauvais choix.",
+    "hist.title": "Historique", "hist.none": "Aucun pronostic.",
+  };
+  const ar = {
+    appName: "هاما 2026",
+    "login.tagline": "توقّع النتائج. تصدّر الترتيب.",
+    "login.enter": "أدخل اسم المستخدم", "login.placeholder": "اسم_المستخدم",
+    "login.play": "العب", "login.hint": "3-20 حرفاً · أحرف وأرقام و _ و -",
+    "login.invalid": "اسم غير صالح (3-20 حرفاً: أحرف وأرقام و _ أو -).",
+    "nav.fixtures": "المباريات", "nav.groups": "المجموعات", "nav.ranks": "الترتيب", "nav.profile": "الملف",
+    vs: "ضد", pts: "نقطة", loading: "جارٍ التحميل…", netErr: "خطأ في الشبكة",
+    "badge.open": "مفتوح", "badge.locked": "مغلق", "badge.live": "مباشر", "badge.completed": "منتهٍ",
+    "day.all": "الكل", "day.today": "اليوم", "day.yesterday": "أمس", "day.tomorrow": "غداً",
+    "day.matches": "مباريات", "day.match": "مباراة",
+    save: "حفظ التوقّع", update: "تعديل التوقّع", saved: "تم الحفظ!", locked: "مغلق", invalid: "نتيجة غير صحيحة",
+    yourPick: "اختيارك", noFixtures: "لا توجد مباريات.",
+    "lb.title": "الترتيب", "lb.rank": "المرتبة", "lb.player": "اللاعب", "lb.points": "النقاط", "lb.you": "أنت", "lb.empty": "لا يوجد لاعبون.",
+    "st.title": "المجموعات والترتيب", "st.team": "الفريق", "st.none": "لا يوجد ترتيب.",
+    "st.p": "لعب", "st.w": "فوز", "st.d": "تعادل", "st.l": "خسارة", "st.gd": "الفارق", "st.pts": "نقاط",
+    "st.bestThirds": "أفضل أصحاب المركز الثالث", "st.qualifies": "متأهل",
+    "profile.title": "الملف الشخصي", "profile.logout": "تسجيل الخروج",
+    "stat.totalPoints": "مجموع النقاط", "stat.exact": "مضبوط", "stat.outcomes": "النتائج", "stat.hitRate": "الإصابة",
+    "champ.title": "توقّع البطل", "champ.choose": "اختر دولة…", "champ.save": "حفظ الاختيار",
+    "champ.locked": "مغلق", "champ.locksIn": "يُغلق خلال", "champ.current": "اختيارك الحالي:",
+    "champ.actual": "البطل الفعلي:", "champ.correct": "صحيح — حصلت على المكافأة! 🏆", "champ.wrong": "اختيار خاطئ.",
+    "hist.title": "السجل", "hist.none": "لا توجد توقّعات.",
+  };
+  const dict = { en, fr, ar };
+  const LANGS = [{ c: "en", n: "English" }, { c: "fr", n: "Français" }, { c: "ar", n: "العربية" }];
+
+  function lang() { return localStorage.getItem("wc_lang") || "en"; }
+  function setLang(c) { localStorage.setItem("wc_lang", c); }
+  function t(key) {
+    const L = dict[lang()] || en;
+    return L[key] != null ? L[key] : (en[key] != null ? en[key] : key);
+  }
+  return { t, lang, setLang, LANGS, isRTL: () => lang() === "ar" };
+})();
