@@ -30,6 +30,14 @@ window.I18N = (function () {
     "champ.locked": "Locked", "champ.locksIn": "Locks in", "champ.current": "Current pick:",
     "champ.actual": "Actual champion:", "champ.correct": "Correct — bonus earned! 🏆", "champ.wrong": "Wrong pick.",
     "hist.title": "History", "hist.none": "No predictions yet.",
+    "dash.sub": "Predict each score up to 30 minutes before kickoff.",
+    "legend.open": "Open", "legend.locked": "Locked", "legend.completed": "Completed",
+    seeAll: "See all predictions", "mp.title": "All predictions", "mp.pick": "Pick", "mp.none": "No predictions.",
+    "stat.pts2": "(2 pts)", "stat.pt1": "(1 pt)", "stat.scoredP": "(scored)",
+    "stat.made": "Predictions made", "stat.scored2": "Scored", "stat.pending": "Pending", "stat.missed": "Missed",
+    "hist.match": "Match", "hist.kickoff": "Kickoff", "hist.yourPick": "Your Pick", "hist.result": "Result", "hist.points": "Points",
+    "champ.your": "Your champion:", "champ.canChange": "you can change it until the deadline.",
+    "champ.teamsAppear": "Teams appear once fixtures are added.", "champ.noPick": "no pick made",
   };
   const fr = {
     appName: "HAMA WC 2026",
@@ -61,6 +69,14 @@ window.I18N = (function () {
     "champ.locked": "Verrouillé", "champ.locksIn": "Dans", "champ.current": "Choix actuel :",
     "champ.actual": "Champion réel :", "champ.correct": "Correct — bonus ! 🏆", "champ.wrong": "Mauvais choix.",
     "hist.title": "Historique", "hist.none": "Aucun pronostic.",
+    "dash.sub": "Pronostiquez chaque score jusqu'à 30 minutes avant le coup d'envoi.",
+    "legend.open": "Ouvert", "legend.locked": "Verrouillé", "legend.completed": "Terminé",
+    seeAll: "Voir tous les pronostics", "mp.title": "Tous les pronostics", "mp.pick": "Choix", "mp.none": "Aucun pronostic.",
+    "stat.pts2": "(2 pts)", "stat.pt1": "(1 pt)", "stat.scoredP": "(notés)",
+    "stat.made": "Pronostics faits", "stat.scored2": "Notés", "stat.pending": "En attente", "stat.missed": "Manqués",
+    "hist.match": "Match", "hist.kickoff": "Coup d'envoi", "hist.yourPick": "Votre choix", "hist.result": "Résultat", "hist.points": "Points",
+    "champ.your": "Votre champion :", "champ.canChange": "vous pouvez le modifier jusqu'à la date limite.",
+    "champ.teamsAppear": "Les équipes apparaîtront une fois les matchs ajoutés.", "champ.noPick": "aucun choix",
   };
   const ar = {
     appName: "هاما 2026",
@@ -92,6 +108,14 @@ window.I18N = (function () {
     "champ.locked": "مغلق", "champ.locksIn": "يُغلق خلال", "champ.current": "اختيارك الحالي:",
     "champ.actual": "البطل الفعلي:", "champ.correct": "صحيح — حصلت على المكافأة! 🏆", "champ.wrong": "اختيار خاطئ.",
     "hist.title": "السجل", "hist.none": "لا توجد توقّعات.",
+    "dash.sub": "توقّع كل نتيجة حتى 30 دقيقة قبل انطلاق المباراة.",
+    "legend.open": "مفتوح", "legend.locked": "مغلق", "legend.completed": "منتهٍ",
+    seeAll: "عرض كل التوقّعات", "mp.title": "كل التوقّعات", "mp.pick": "التوقّع", "mp.none": "لا توجد توقّعات.",
+    "stat.pts2": "(نقطتان)", "stat.pt1": "(نقطة)", "stat.scoredP": "(المحتسبة)",
+    "stat.made": "التوقّعات المُقدّمة", "stat.scored2": "المحتسبة", "stat.pending": "قيد الانتظار", "stat.missed": "الخاسرة",
+    "hist.match": "المباراة", "hist.kickoff": "الانطلاق", "hist.yourPick": "اختيارك", "hist.result": "النتيجة", "hist.points": "النقاط",
+    "champ.your": "بطلك:", "champ.canChange": "يمكنك تغييره حتى الموعد النهائي.",
+    "champ.teamsAppear": "تظهر الفرق هنا بعد إضافة المباريات.", "champ.noPick": "لم تختر",
   };
   const dict = { en, fr, ar };
   const LANGS = [{ c: "en", n: "English" }, { c: "fr", n: "Français" }, { c: "ar", n: "العربية" }];

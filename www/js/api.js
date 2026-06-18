@@ -42,5 +42,6 @@ window.API = (function () {
     standings: () => call("/standings"),
     profile: () => call("/profile"),
     champion: (champion) => call("/champion", { method: "POST", body: { champion } }),
+    matchPreds: (id) => call("/match/" + id + "/predictions"),
   };
 })();
