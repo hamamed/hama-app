@@ -55,8 +55,7 @@
       { id: "profile", icon: "fa-user", label: t("nav.profile") },
     ];
     app().innerHTML =
-      '<div class="topbar"><img class="logo" src="img/logo.png" onerror="this.style.display=\'none\'"/>' +
-      '<h1>' + esc(t("appName")) + '</h1><div class="spacer"></div></div>' +
+      '<div class="topbar"><img class="logo" src="img/logo.png" onerror="this.style.display=\'none\'"/></div>' +
       '<div class="screen fade-in" id="screen">' + bodyHtml + '</div>' +
       '<nav class="tabbar">' + tabs.map((x) =>
         '<button class="tab ' + (x.id === activeTab ? "active" : "") + '" data-tab="' + x.id + '">' +
