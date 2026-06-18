@@ -28,12 +28,10 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Pin build-tools to 34.0.0 (remove newer ones)
+      - name: Install SDK 34 packages
         run: |
           yes | sdkmanager "platforms;android-34" "build-tools;34.0.0" || true
-          yes | sdkmanager --uninstall "build-tools;35.0.0" "build-tools;35.0.1" "build-tools;36.0.0" || true
           yes | sdkmanager --licenses || true
-          echo "Installed build-tools:" && ls "$ANDROID_SDK_ROOT/build-tools" || true
 
       - name: Install Cordova
         run: npm install -g cordova
@@ -41,9 +39,9 @@ jobs:
       - name: Add Android platform
         run: cordova platform add android@13
 
-      - name: Force SDK 34 / build-tools 34.0.0 in Cordova config
+      - name: Bump Android Gradle Plugin (fixes aapt2 <color> bug) + pin SDK 34
         run: |
-          node -e "const fs=require('fs');const p='platforms/android/cdv-gradle-config.json';const c=JSON.parse(fs.readFileSync(p,'utf8'));c.SDK_VERSION=34;c.TARGET_SDK_VERSION=34;c.BUILDTOOLS_VERSION='34.0.0';fs.writeFileSync(p,JSON.stringify(c,null,2));console.log(c);"
+          node -e "const fs=require('fs');const p='platforms/android/cdv-gradle-config.json';const c=JSON.parse(fs.readFileSync(p,'utf8'));console.log('BEFORE',JSON.stringify(c));c.SDK_VERSION=34;c.TARGET_SDK_VERSION=34;c.BUILDTOOLS_VERSION='34.0.0';c.AGP_VERSION='8.5.2';fs.writeFileSync(p,JSON.stringify(c,null,2));console.log('AFTER',JSON.stringify(c));"
 
       - name: Build debug APK
         run: cordova build android --verbose
