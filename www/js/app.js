@@ -107,8 +107,44 @@
       e.preventDefault();
       const name = (input.value || "").trim();
       if (!/^[a-zA-Z0-9_-]{3,20}$/.test(name)) return toast(t("login.invalid"), false);
-      try { const r = await API.login(name); API.setSession(r.token, r.user); go("fixtures"); }
-      catch (err) { toast(err.status === 400 ? t("login.invalid") : t("netErr"), false); }
+      try {
+        const r = await API.login(name);
+        if (r.needPin) return renderPin(name, r.mode);
+        API.setSession(r.token, r.user); go("fixtures");
+      } catch (err) { toast(err.status === 400 ? t("login.invalid") : t("netErr"), false); }
+    });
+  }
+
+  // ---------- PIN screen ----------
+  function renderPin(username, mode) {
+    clearTimers(); applyDir();
+    const setMode = mode === "create" || mode === "set";
+    app().innerHTML =
+      '<div class="login-hero d-flex align-items-center"><div class="container"><div class="row justify-content-center"><div class="col-12 col-md-7 col-lg-5">' +
+        '<div class="text-center mb-4"><img class="login-logo-img mb-3" src="img/logo.png" onerror="this.style.display=\'none\'"/>' +
+          '<p class="text-secondary mb-0"><i class="fa-solid fa-user me-1"></i><span class="fw-bold">' + esc(username) + "</span></p></div>" +
+        '<div class="card wc-card border-0 shadow-lg"><div class="card-body p-4 p-md-5">' +
+          '<h5 class="fw-semibold mb-2 text-center"><i class="fa-solid fa-lock text-accent me-2"></i>' + esc(setMode ? t("pin.choose") : t("pin.enter")) + "</h5>" +
+          (setMode ? '<p class="text-secondary small mb-4 text-center">' + esc(t("pin.hint")) + "</p>" : "") +
+          '<form id="pf"><input id="pin" type="password" class="form-control pin-input mb-3" inputmode="numeric" maxlength="4" autocomplete="one-time-code" placeholder="••••" autofocus/>' +
+          '<button class="btn btn-accent btn-lg w-100 fw-semibold">' + esc(t("pin.submit")) + ' <i class="fa-solid fa-arrow-right-long ms-1"></i></button></form>' +
+          '<p class="text-center mt-3 mb-0"><a href="#" id="pback" class="text-secondary small">&larr; ' + esc(t("pin.back")) + "</a></p>" +
+        "</div></div>" +
+      "</div></div></div></div>";
+
+    const pin = document.getElementById("pin");
+    pin.addEventListener("input", function () { this.value = this.value.replace(/\D/g, "").slice(0, 4); });
+    document.getElementById("pback").addEventListener("click", (e) => { e.preventDefault(); renderLogin(); });
+    document.getElementById("pf").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const code = (pin.value || "").trim();
+      if (!/^\d{4}$/.test(code)) return toast(t("pin.invalid"), false);
+      try {
+        const r = await API.login(username, code);
+        if (r.token) { API.setSession(r.token, r.user); go("fixtures"); }
+      } catch (err) {
+        toast(err.status === 401 ? t("pin.wrong") : err.status === 400 ? t("pin.invalid") : t("netErr"), false);
+      }
     });
   }
 

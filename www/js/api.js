@@ -27,7 +27,8 @@ window.API = (function () {
       headers,
       body: opts.body ? JSON.stringify(opts.body) : undefined,
     });
-    if (res.status === 401) { logout(); location.reload(); throw new Error("unauthorized"); }
+    // Only force a re-login on 401 for authenticated requests (not the login call).
+    if (res.status === 401 && tk) { logout(); location.reload(); throw new Error("unauthorized"); }
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw Object.assign(new Error(data.error || "error"), { status: res.status, data });
     return data;
@@ -35,7 +36,7 @@ window.API = (function () {
 
   return {
     token, user, setSession, logout,
-    login: (username) => call("/login", { method: "POST", body: { username } }),
+    login: (username, pin) => call("/login", { method: "POST", body: pin != null ? { username, pin } : { username } }),
     matches: () => call("/matches"),
     predict: (matchId, scoreA, scoreB) => call("/predict", { method: "POST", body: { matchId, scoreA, scoreB } }),
     leaderboard: () => call("/leaderboard"),
