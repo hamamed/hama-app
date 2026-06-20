@@ -3,9 +3,14 @@
   const t = I18N.t;
   const app = () => document.getElementById("app");
   const LOCALE = { en: "en-GB", fr: "fr-FR", ar: "ar" };
-  const APP_VERSION = "1.2.0"; // bump this when you build a new APK
+  const APP_VERSION = "1.3.0"; // bump this when you build a new APK
   let countdownTimer = null, liveTimer = null;
   let appUpdate = { available: false, url: "https://koydam.com/download/hama.apk" };
+  let isAdminUser = false;
+
+  async function checkAdmin() {
+    try { const r = await API.me(); isAdminUser = !!r.isAdmin; } catch (e) { isAdminUser = false; }
+  }
 
   function openExternal(url) {
     if (window.cordova && window.cordova.InAppBrowser) window.cordova.InAppBrowser.open(url, "_system");
@@ -81,6 +86,7 @@
       { id: "ranks", icon: "fa-trophy", label: t("nav.ranks") },
       { id: "profile", icon: "fa-user", label: t("nav.profile") },
     ];
+    if (isAdminUser) tabs.push({ id: "admin", icon: "fa-screwdriver-wrench", label: "Admin" });
     app().innerHTML =
       '<nav class="navbar wc-navbar"><div class="container">' +
         '<a class="navbar-brand d-flex align-items-center" href="#"><img class="brand-logo" src="img/logo.png" onerror="this.style.display=\'none\'"/></a>' +
@@ -113,7 +119,7 @@
 
   function go(tab) {
     clearTimers();
-    const map = { fixtures: renderFixtures, groups: renderGroups, ranks: renderRanks, profile: renderProfile };
+    const map = { fixtures: renderFixtures, groups: renderGroups, ranks: renderRanks, profile: renderProfile, admin: renderAdmin };
     shell(tab, loading());
     (map[tab] || renderFixtures)();
   }
@@ -145,7 +151,7 @@
       try {
         const r = await API.login(name);
         if (r.needPin) return renderPin(name, r.mode);
-        API.setSession(r.token, r.user); go("fixtures");
+        API.setSession(r.token, r.user); await checkAdmin(); go("fixtures");
       } catch (err) { toast(err.status === 400 ? t("login.invalid") : t("netErr"), false); }
     });
   }
@@ -176,7 +182,7 @@
       if (!/^\d{4}$/.test(code)) return toast(t("pin.invalid"), false);
       try {
         const r = await API.login(username, code);
-        if (r.token) { API.setSession(r.token, r.user); go("fixtures"); }
+        if (r.token) { API.setSession(r.token, r.user); await checkAdmin(); go("fixtures"); }
       } catch (err) {
         toast(err.status === 401 ? t("pin.wrong") : err.status === 400 ? t("pin.invalid") : t("netErr"), false);
       }
@@ -681,13 +687,242 @@
     }
   }
 
+  // ---------- ADMIN ----------
+  let adminData = null;
+  function fmtKick(ms) {
+    return new Date(ms).toLocaleString(loc(), { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+  }
+  function miniFlag(url) {
+    return url ? '<img src="' + esc(url) + '" class="me-1" style="width:18px;height:13px;object-fit:cover;border-radius:2px" alt=""/>' : "";
+  }
+  function adminModal(title, bodyHtml) {
+    let el = document.getElementById("adminModal");
+    if (!el) { el = document.createElement("div"); el.id = "adminModal"; el.className = "modal fade"; el.tabIndex = -1; document.body.appendChild(el); }
+    el.innerHTML = '<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable"><div class="modal-content wc-card border-0">' +
+      '<div class="modal-header"><h5 class="modal-title fw-bold">' + title + '</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>' +
+      '<div class="modal-body" id="amBody">' + bodyHtml + "</div></div></div>";
+    const modal = bootstrap.Modal.getOrCreateInstance(el);
+    modal.show();
+    return { el: el, body: document.getElementById("amBody"), modal: modal };
+  }
+  function adminDo(promise, modal, okMsg) {
+    return promise.then(() => { if (modal) modal.hide(); toast(okMsg || "Done", true); renderAdmin(); })
+      .catch((e) => toast(e && e.data && e.data.error ? e.data.error : t("netErr"), false));
+  }
+  async function adminRefresh() { try { adminData = await API.admin.overview(); } catch (e) { /* keep old */ } }
+
+  async function renderAdmin() {
+    let d; try { d = await API.admin.overview(); } catch { return fail(); }
+    adminData = d;
+    const tile = (id, icon, label) =>
+      '<div class="col-4"><button class="admin-tile w-100" data-act="' + id + '"><i class="fa-solid ' + icon + '"></i><span>' + esc(label) + "</span></button></div>";
+    let html = '<div class="mb-3"><h2 class="fw-bold mb-0"><i class="fa-solid fa-screwdriver-wrench text-accent me-2"></i>Admin</h2></div>';
+    html += '<div class="row g-2 mb-4">' +
+      tile("addMatch", "fa-plus", "Add match") +
+      tile("pred", "fa-pen", "Prediction") +
+      tile("polls", "fa-square-poll-vertical", "Polls") +
+      tile("anns", "fa-bullhorn", "Announce") +
+      tile("champ", "fa-crown", "Champion") +
+      tile("import", "fa-cloud-arrow-down", "Import") +
+      tile("users", "fa-users", "Users") +
+      "</div>";
+    html += '<h6 class="fw-bold mb-2">Matches</h6><div class="card wc-card border-0"><div class="table-responsive"><table class="table align-middle mb-0"><tbody>';
+    if (!d.matches.length) html += '<tr><td class="text-center text-secondary py-3">No matches.</td></tr>';
+    d.matches.forEach((m) => { html += adminMatchRow(m); });
+    html += "</tbody></table></div></div>";
+    setBody(html);
+    document.querySelectorAll("[data-act]").forEach((b) => b.addEventListener("click", () => adminAction(b.dataset.act)));
+    bindAdminMatches();
+  }
+
+  function adminMatchRow(m) {
+    const title = '<div class="fw-semibold small">' + miniFlag(m.flagA) + esc(m.teamA) + ' <span class="text-secondary">vs</span> ' + miniFlag(m.flagB) + esc(m.teamB) + "</div>" +
+      '<div class="text-secondary" style="font-size:.72rem">' + fmtKick(m.kickoff) + "</div>";
+    let right;
+    if (m.status === "completed") {
+      right = '<span class="fw-bold me-2">' + m.actualA + " - " + m.actualB + '</span><i class="fa-solid fa-lock text-secondary me-2"></i>' +
+        '<button class="btn btn-outline-danger btn-sm" data-del="' + m.id + '"><i class="fa-solid fa-trash"></i></button>';
+    } else {
+      const va = m.liveA != null ? m.liveA : "", vb = m.liveB != null ? m.liveB : "";
+      right = '<span class="d-inline-flex align-items-center gap-1 flex-wrap justify-content-end" data-row="' + m.id + '">' +
+        '<input type="number" min="0" class="form-control form-control-sm text-center am-a" value="' + va + '" style="width:44px"/><span>-</span>' +
+        '<input type="number" min="0" class="form-control form-control-sm text-center am-b" value="' + vb + '" style="width:44px"/>' +
+        '<button class="btn btn-outline-danger btn-sm am-live">Live</button>' +
+        '<button class="btn btn-accent btn-sm am-final"><i class="fa-solid fa-check"></i></button>' +
+        '<button class="btn btn-outline-danger btn-sm" data-del="' + m.id + '"><i class="fa-solid fa-trash"></i></button></span>';
+    }
+    return "<tr><td>" + title + '</td><td class="text-end">' + right + "</td></tr>";
+  }
+
+  function bindAdminMatches() {
+    document.querySelectorAll("[data-del]").forEach((b) => b.addEventListener("click", () => {
+      if (!confirm("Delete this match? Removes its predictions and reverses points.")) return;
+      adminDo(API.admin.delMatch(b.dataset.del), null, "Match deleted");
+    }));
+    document.querySelectorAll("[data-row]").forEach((row) => {
+      const id = row.dataset.row;
+      const a = () => row.querySelector(".am-a").value, b = () => row.querySelector(".am-b").value;
+      row.querySelector(".am-live").addEventListener("click", () => adminDo(API.admin.live(id, a(), b()), null, "Live score updated"));
+      row.querySelector(".am-final").addEventListener("click", () => {
+        if (!confirm("Finalize result? Locks the match and scores all predictions.")) return;
+        adminDo(API.admin.result(id, a(), b()), null, "Result saved");
+      });
+    });
+  }
+
+  function adminAction(act) {
+    const d = adminData || {};
+    if (act === "import") {
+      if (!confirm("Import / refresh fixtures from the football API?")) return;
+      adminDo(API.admin.importFixtures(), null, "Import done");
+    } else if (act === "addMatch") {
+      const m = adminModal("Add a match",
+        '<div class="mb-2"><label class="form-label small text-secondary">Team A</label><input id="amTeamA" class="form-control" placeholder="Brazil"/></div>' +
+        '<div class="mb-2"><label class="form-label small text-secondary">Team B</label><input id="amTeamB" class="form-control" placeholder="Argentina"/></div>' +
+        '<div class="mb-3"><label class="form-label small text-secondary">Kickoff</label><input id="amKick" type="datetime-local" class="form-control"/></div>' +
+        '<button id="amAdd" class="btn btn-accent w-100 fw-semibold">Add</button>');
+      m.body.querySelector("#amAdd").addEventListener("click", () => {
+        const ta = m.body.querySelector("#amTeamA").value.trim(), tb = m.body.querySelector("#amTeamB").value.trim(), k = m.body.querySelector("#amKick").value;
+        if (!ta || !tb || !k) return toast("Fill all fields", false);
+        adminDo(API.admin.addMatch(ta, tb, k), m.modal, "Match added");
+      });
+    } else if (act === "champ") {
+      const opts = '<option value="">— Not decided —</option>' + d.teams.map((tm) =>
+        '<option value="' + esc(tm.name) + '"' + (d.champion.actual === tm.name ? " selected" : "") + ">" + esc(tm.label) + "</option>").join("");
+      const m = adminModal("Set Champion",
+        '<p class="small text-secondary">Awards +' + d.champion.bonus + ' to everyone who picked this team.</p>' +
+        '<select id="amChamp" class="form-select mb-3">' + opts + "</select>" +
+        '<button id="amChampSave" class="btn btn-accent w-100 fw-semibold">Save Champion</button>');
+      m.body.querySelector("#amChampSave").addEventListener("click", () => {
+        if (!confirm("Set champion and award the bonus?")) return;
+        adminDo(API.admin.champion(m.body.querySelector("#amChamp").value), m.modal, "Champion set");
+      });
+    } else if (act === "pred") {
+      const uOpts = '<option value="">— user —</option>' + d.users.map((u) => '<option value="' + u.id + '">' + esc(u.username) + "</option>").join("");
+      const mOpts = '<option value="">— match —</option>' + d.matches.map((mm) => '<option value="' + mm.id + '">' + esc(mm.teamA) + " vs " + esc(mm.teamB) + "</option>").join("");
+      const m = adminModal("Add / edit prediction",
+        '<div class="mb-2"><label class="form-label small text-secondary">User</label><select id="apUser" class="form-select">' + uOpts + "</select></div>" +
+        '<div class="mb-2"><label class="form-label small text-secondary">Match</label><select id="apMatch" class="form-select">' + mOpts + "</select></div>" +
+        '<div class="d-flex gap-2 mb-3">' +
+          '<div><label class="form-label small text-secondary">A</label><input id="apA" type="number" min="0" class="form-control text-center"/></div>' +
+          '<div><label class="form-label small text-secondary">B</label><input id="apB" type="number" min="0" class="form-control text-center"/></div>' +
+          '<div><label class="form-label small text-secondary">Pts</label><input id="apP" type="number" min="0" class="form-control text-center" placeholder="auto"/></div></div>' +
+        '<button id="apSave" class="btn btn-accent w-100 fw-semibold">Save</button>');
+      m.body.querySelector("#apSave").addEventListener("click", () => {
+        const uid = m.body.querySelector("#apUser").value, mid = m.body.querySelector("#apMatch").value;
+        const a = m.body.querySelector("#apA").value, b = m.body.querySelector("#apB").value, p = m.body.querySelector("#apP").value;
+        if (!uid || !mid || a === "" || b === "") return toast("Pick user, match and score", false);
+        adminDo(API.admin.prediction(uid, mid, a, b, p), m.modal, "Prediction saved");
+      });
+    } else if (act === "anns") {
+      adminAnnouncements();
+    } else if (act === "polls") {
+      adminPolls();
+    } else if (act === "users") {
+      adminUsers();
+    }
+  }
+
+  async function adminAnnouncements() {
+    await adminRefresh();
+    const list = adminData.announcements.map((a) =>
+      '<li class="d-flex align-items-start gap-2 py-2 border-top"><span class="badge ' + (a.active ? "text-bg-success" : "text-bg-secondary") + '">' + (a.active ? "On" : "Off") + "</span>" +
+      '<span class="flex-grow-1 small pre-line" dir="auto">' + esc(a.message) + "</span>" +
+      '<button class="btn btn-outline-secondary btn-sm" data-tog="' + a.id + '"><i class="fa-solid fa-eye"></i></button>' +
+      '<button class="btn btn-outline-danger btn-sm" data-del="' + a.id + '"><i class="fa-solid fa-trash"></i></button></li>').join("");
+    const m = adminModal("Announcements",
+      '<textarea id="annMsg" class="form-control mb-2" rows="3" maxlength="500" placeholder="Write an announcement… (emojis + line breaks OK)" dir="auto"></textarea>' +
+      '<button id="annPost" class="btn btn-accent w-100 fw-semibold mb-3">Post</button>' +
+      '<ul class="list-unstyled mb-0">' + list + "</ul>");
+    m.body.querySelector("#annPost").addEventListener("click", () => {
+      const msg = m.body.querySelector("#annMsg").value.trim();
+      if (!msg) return toast("Empty", false);
+      API.admin.announce(msg).then(adminAnnouncements).catch(() => toast(t("netErr"), false));
+    });
+    m.body.querySelectorAll("[data-tog]").forEach((b) => b.addEventListener("click", () => API.admin.announceToggle(b.dataset.tog).then(adminAnnouncements).catch(() => toast(t("netErr"), false))));
+    m.body.querySelectorAll("[data-del]").forEach((b) => b.addEventListener("click", () => { if (confirm("Delete this announcement?")) API.admin.announceDelete(b.dataset.del).then(adminAnnouncements).catch(() => toast(t("netErr"), false)); }));
+  }
+
+  async function adminPolls() {
+    await adminRefresh();
+    const list = adminData.polls.map((p) => {
+      const voters = p.voters.length ? '<div class="mt-1">' + p.voters.map((v) =>
+        '<span class="badge rounded-pill ' + (v.choice ? "text-bg-success" : "text-bg-danger") + ' me-1 mb-1">' + esc(v.username) + "</span>").join("") + "</div>" : "";
+      return '<li class="py-2 border-top">' +
+        '<div class="d-flex align-items-center gap-2"><span class="badge ' + (p.active ? "text-bg-success" : "text-bg-secondary") + '">' + (p.active ? "On" : "Off") + "</span>" +
+        '<span class="flex-grow-1 small pre-line" dir="auto">' + esc(p.question) + "</span>" +
+        '<span class="small text-success fw-bold">✓' + p.yes + '</span><span class="small text-danger fw-bold">✗' + p.no + "</span></div>" + voters +
+        '<div class="d-flex gap-2 mt-1">' +
+          '<button class="btn btn-outline-secondary btn-sm" data-edit="' + p.id + '"><i class="fa-solid fa-pen"></i></button>' +
+          '<button class="btn btn-outline-secondary btn-sm" data-tog="' + p.id + '"><i class="fa-solid fa-power-off"></i></button>' +
+          '<button class="btn btn-outline-danger btn-sm" data-del="' + p.id + '"><i class="fa-solid fa-trash"></i></button></div>' +
+        '<div class="d-none mt-2" data-editbox="' + p.id + '"><textarea class="form-control mb-1" rows="3" dir="auto">' + esc(p.question) + "</textarea>" +
+          '<button class="btn btn-accent btn-sm" data-save="' + p.id + '">Save</button></div></li>';
+    }).join("");
+    const m = adminModal("Feature polls",
+      '<textarea id="pollQ" class="form-control mb-2" rows="3" maxlength="500" placeholder="Ask a Yes/No question… (emojis + line breaks OK)" dir="auto"></textarea>' +
+      '<button id="pollNew" class="btn btn-accent w-100 fw-semibold mb-3">Create poll</button>' +
+      '<ul class="list-unstyled mb-0">' + list + "</ul>");
+    m.body.querySelector("#pollNew").addEventListener("click", () => {
+      const q = m.body.querySelector("#pollQ").value.trim();
+      if (!q) return toast("Empty", false);
+      API.admin.poll(q).then(adminPolls).catch(() => toast(t("netErr"), false));
+    });
+    m.body.querySelectorAll("[data-tog]").forEach((b) => b.addEventListener("click", () => API.admin.pollToggle(b.dataset.tog).then(adminPolls).catch(() => toast(t("netErr"), false))));
+    m.body.querySelectorAll("[data-del]").forEach((b) => b.addEventListener("click", () => { if (confirm("Delete this poll and its votes?")) API.admin.pollDelete(b.dataset.del).then(adminPolls).catch(() => toast(t("netErr"), false)); }));
+    m.body.querySelectorAll("[data-edit]").forEach((b) => b.addEventListener("click", () => { const box = m.body.querySelector('[data-editbox="' + b.dataset.edit + '"]'); if (box) box.classList.toggle("d-none"); }));
+    m.body.querySelectorAll("[data-save]").forEach((b) => b.addEventListener("click", () => {
+      const box = m.body.querySelector('[data-editbox="' + b.dataset.save + '"]');
+      const q = box.querySelector("textarea").value.trim();
+      if (!q) return toast("Empty", false);
+      API.admin.pollEdit(b.dataset.save, q).then(adminPolls).catch(() => toast(t("netErr"), false));
+    }));
+  }
+
+  async function adminUsers() {
+    await adminRefresh();
+    const list = adminData.users.map((u) =>
+      '<li class="py-2 border-top">' +
+        '<div class="d-flex align-items-center gap-2"><span class="fw-semibold flex-grow-1">' + esc(u.username) + (u.isAdmin ? ' <span class="badge text-bg-warning">Admin</span>' : "") + '</span><span class="text-accent fw-bold">' + u.totalPoints + "</span></div>" +
+        '<div class="d-flex flex-wrap gap-1 mt-1">' +
+          '<button class="btn btn-outline-secondary btn-sm" data-preds="' + u.id + '" title="Predictions"><i class="fa-solid fa-list-check"></i></button>' +
+          '<button class="btn btn-outline-secondary btn-sm" data-ren="' + u.id + '" title="Rename"><i class="fa-solid fa-pen"></i></button>' +
+          '<button class="btn btn-outline-secondary btn-sm" data-pin="' + u.id + '" title="Reset PIN"><i class="fa-solid fa-key"></i></button>' +
+          '<button class="btn btn-outline-secondary btn-sm" data-rst="' + u.id + '" title="Reset points"><i class="fa-solid fa-rotate-left"></i></button>' +
+          '<button class="btn ' + (u.isAdmin ? "btn-warning" : "btn-outline-warning") + ' btn-sm" data-adm="' + u.id + '" title="Admin"><i class="fa-solid fa-shield-halved"></i></button>' +
+          '<button class="btn btn-outline-danger btn-sm" data-del="' + u.id + '" title="Delete"><i class="fa-solid fa-trash"></i></button></div>' +
+        '<div class="d-none mt-2" data-renbox="' + u.id + '"><div class="input-group input-group-sm"><input class="form-control" value="' + esc(u.username) + '" maxlength="20"/><button class="btn btn-accent" data-rensave="' + u.id + '">Save</button></div></div></li>').join("");
+    const m = adminModal("Users", '<ul class="list-unstyled mb-0">' + list + "</ul>");
+    m.body.querySelectorAll("[data-adm]").forEach((b) => b.addEventListener("click", () => { if (confirm("Toggle admin access for this user?")) API.admin.userToggleAdmin(b.dataset.adm).then(adminUsers).catch(() => toast(t("netErr"), false)); }));
+    m.body.querySelectorAll("[data-rst]").forEach((b) => b.addEventListener("click", () => { if (confirm("Reset this user's points to 0?")) API.admin.userReset(b.dataset.rst).then(adminUsers).catch(() => toast(t("netErr"), false)); }));
+    m.body.querySelectorAll("[data-pin]").forEach((b) => b.addEventListener("click", () => { if (confirm("Clear this user's PIN? They set a new one next login.")) API.admin.userResetPin(b.dataset.pin).then(() => toast("PIN cleared", true)).catch(() => toast(t("netErr"), false)); }));
+    m.body.querySelectorAll("[data-del]").forEach((b) => b.addEventListener("click", () => { if (confirm("Delete this user and all their predictions?")) API.admin.userDelete(b.dataset.del).then(adminUsers).catch(() => toast(t("netErr"), false)); }));
+    m.body.querySelectorAll("[data-ren]").forEach((b) => b.addEventListener("click", () => { const box = m.body.querySelector('[data-renbox="' + b.dataset.ren + '"]'); if (box) box.classList.toggle("d-none"); }));
+    m.body.querySelectorAll("[data-rensave]").forEach((b) => b.addEventListener("click", () => {
+      const box = m.body.querySelector('[data-renbox="' + b.dataset.rensave + '"]');
+      const name = box.querySelector("input").value.trim();
+      if (!/^[a-zA-Z0-9_-]{3,20}$/.test(name)) return toast(t("login.invalid"), false);
+      API.admin.userRename(b.dataset.rensave, name).then(adminUsers).catch((e) => toast(e && e.status === 409 ? t("profile.taken") : t("netErr"), false));
+    }));
+    m.body.querySelectorAll("[data-preds]").forEach((b) => b.addEventListener("click", () => {
+      API.admin.userPreds(b.dataset.preds).then((r) => {
+        const rows = r.predictions.length
+          ? r.predictions.map((p) => "<tr><td>" + esc(p.match) + '</td><td class="text-center fw-semibold">' + esc(p.pick) + '</td><td class="text-center">' + esc(p.result) + '</td><td class="text-end fw-bold text-accent">' + p.points + "</td></tr>").join("")
+          : '<tr><td colspan="4" class="text-center text-secondary py-3">No predictions.</td></tr>';
+        m.body.innerHTML = '<button class="btn btn-outline-secondary btn-sm mb-2" id="amBack"><i class="fa-solid fa-arrow-left me-1"></i>Back</button>' +
+          "<h6 class=\"fw-bold\">" + esc(r.username) + '</h6><div class="table-responsive"><table class="table table-sm align-middle mb-0"><thead><tr><th>Match</th><th class="text-center">Pick</th><th class="text-center">Result</th><th class="text-end">Pts</th></tr></thead><tbody>' + rows + "</tbody></table></div>";
+        m.body.querySelector("#amBack").addEventListener("click", adminUsers);
+      }).catch(() => toast(t("netErr"), false));
+    }));
+  }
+
   // ---------- boot ----------
   let started = false;
   function start() {
     if (started) return; started = true;
     applyDir();
     checkUpdate();
-    if (API.token()) go("fixtures"); else renderLogin();
+    if (API.token()) checkAdmin().then(() => go("fixtures")); else renderLogin();
   }
   document.addEventListener("deviceready", start, false);
   setTimeout(start, 1200);

@@ -87,6 +87,15 @@ h1, h2, h3, h4, h5, h6, .fw-bold { color: var(--text); letter-spacing: -0.01em; 
 .ann-banner .fa-bullhorn { color: var(--accent); }
 .pre-line { white-space: pre-line; }
 .stat-tile { background: var(--surface-2); border: 1px solid var(--line); }
+.admin-tile {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 6px; padding: 12px 6px; min-height: 78px;
+  border: 1px solid var(--line); border-radius: 14px;
+  background: var(--surface); color: var(--text);
+  font-weight: 600; font-size: .72rem; text-align: center; line-height: 1.1;
+}
+.admin-tile i { font-size: 1.25rem; color: var(--accent); }
+.admin-tile:active { background: var(--accent-soft); }
 
 .login-hero {
   flex: 1; min-height: calc(100vh - 80px); padding: 2rem 0;
