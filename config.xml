@@ -9,6 +9,7 @@
     <allow-intent href="http://*/*" />
     <allow-intent href="https://*/*" />
     <access origin="*" />
+    <plugin name="cordova-plugin-inappbrowser" spec="^6.0.0" />
     <preference name="DisallowOverscroll" value="true" />
     <preference name="Orientation" value="portrait" />
     <preference name="BackgroundColor" value="#FFF4F5F8" />

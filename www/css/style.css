@@ -17,6 +17,13 @@
   --shadow-hover: 0 12px 30px rgba(17, 34, 63, 0.10);
 }
 
+/* Smaller base size = everything (rem-based) scales down for a tighter mobile fit */
+html { font-size: 13.5px; }
+body { overflow-x: hidden; }
+.container { padding-left: 12px; padding-right: 12px; max-width: 100%; }
+.table td, .table th { padding: 0.4rem 0.3rem; }
+.standings-table td, .standings-table th { padding: 0.4rem 0.2rem; }
+
 * { font-family: "Nunito", system-ui, -apple-system, sans-serif; -webkit-tap-highlight-color: transparent; }
 [dir="rtl"] *:not([class*="fa-"]):not(.fa) { font-family: "Cairo", "Nunito", system-ui, sans-serif; }
 .lang-toggle { cursor: pointer; }

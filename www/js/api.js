@@ -44,6 +44,7 @@ window.API = (function () {
     profile: () => call("/profile"),
     champion: (champion) => call("/champion", { method: "POST", body: { champion } }),
     matchPreds: (id) => call("/match/" + id + "/predictions"),
+    appVersion: () => call("/app-version"),
     setUsername: (username) => call("/username", { method: "POST", body: { username } }),
     setAvatar: (avatar) => call("/avatar", { method: "POST", body: { avatar } }),
     updateUser: (patch) => {

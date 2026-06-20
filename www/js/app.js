@@ -3,7 +3,33 @@
   const t = I18N.t;
   const app = () => document.getElementById("app");
   const LOCALE = { en: "en-GB", fr: "fr-FR", ar: "ar" };
+  const APP_VERSION = "1.0.0"; // bump this when you build a new APK
   let countdownTimer = null, liveTimer = null;
+  let appUpdate = { available: false, url: "https://koydam.com/download/hama.apk" };
+
+  function openExternal(url) {
+    if (window.cordova && window.cordova.InAppBrowser) window.cordova.InAppBrowser.open(url, "_system");
+    else window.open(url, "_system");
+  }
+  async function checkUpdate() {
+    try {
+      const r = await API.appVersion();
+      if (r && r.version && r.version !== APP_VERSION) {
+        appUpdate = { available: true, url: r.url || appUpdate.url };
+        injectUpdateButton();
+      }
+    } catch (e) { /* offline — ignore */ }
+  }
+  function injectUpdateButton() {
+    const bar = document.querySelector(".wc-navbar .container");
+    if (bar && appUpdate.available && !document.getElementById("updateBtn")) {
+      const a = document.createElement("a");
+      a.id = "updateBtn"; a.href = "#"; a.className = "btn btn-accent btn-sm ms-2";
+      a.innerHTML = '<i class="fa-solid fa-circle-arrow-down me-1"></i>' + esc(t("app.update"));
+      a.addEventListener("click", (e) => { e.preventDefault(); openExternal(appUpdate.url); });
+      bar.appendChild(a);
+    }
+  }
 
   function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"]/g, (c) =>
@@ -62,6 +88,7 @@
           '<i class="fa-solid fa-globe me-1"></i>' + I18N.lang().toUpperCase() + "</a>" +
           '<ul class="dropdown-menu dropdown-menu-end">' + langItems + "</ul></div>" +
         '<span class="badge wc-userchip ms-2"><i class="fa-solid fa-user me-1"></i>' + esc(u.username || "") + "</span>" +
+        (appUpdate.available ? '<a id="updateBtn" href="#" class="btn btn-accent btn-sm ms-2"><i class="fa-solid fa-circle-arrow-down me-1"></i>' + esc(t("app.update")) + "</a>" : "") +
       "</div></nav>" +
       '<div class="container py-4" id="screen">' + bodyHtml + "</div>" +
       '<nav class="bottom-nav">' + tabs.map((x) =>
@@ -71,6 +98,8 @@
     app().querySelectorAll(".bottom-nav-item").forEach((b) => b.addEventListener("click", () => go(b.dataset.tab)));
     app().querySelectorAll("[data-l]").forEach((b) =>
       b.addEventListener("click", (e) => { e.preventDefault(); I18N.setLang(b.dataset.l); applyDir(); go(activeTab); }));
+    const ub = document.getElementById("updateBtn");
+    if (ub) ub.addEventListener("click", (e) => { e.preventDefault(); openExternal(appUpdate.url); });
   }
   function setBody(html) { const s = document.getElementById("screen"); if (s) s.innerHTML = html; }
   function loading() { return '<div class="text-center text-secondary py-5"><i class="fa-solid fa-futbol fa-spin fa-2x"></i></div>'; }
@@ -492,6 +521,7 @@
   function start() {
     if (started) return; started = true;
     applyDir();
+    checkUpdate();
     if (API.token()) go("fixtures"); else renderLogin();
   }
   document.addEventListener("deviceready", start, false);
