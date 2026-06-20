@@ -177,6 +177,7 @@ h1, h2, h3, h4, h5, h6, .fw-bold { color: var(--text); letter-spacing: -0.01em; 
 .bottom-nav-item i { font-size: 1.2rem; }
 .bottom-nav-item.active { color: var(--accent); }
 
+.preds-hidden .user-pred { filter: blur(7px); user-select: none; transition: filter 0.15s ease; }
 .avatar-mini { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; vertical-align: -8px; border: 1px solid var(--line); background: var(--surface-2); }
 .flag-pick { width: 100%; border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 4px; cursor: pointer; }
 .flag-pick:hover { border-color: var(--accent); }

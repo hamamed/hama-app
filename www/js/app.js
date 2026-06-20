@@ -103,6 +103,12 @@
   }
   function setBody(html) { const s = document.getElementById("screen"); if (s) s.innerHTML = html; }
   function loading() { return '<div class="text-center text-secondary py-5"><i class="fa-solid fa-futbol fa-spin fa-2x"></i></div>'; }
+  function applyPrivacy() {
+    const hidden = localStorage.getItem("predsHidden") === "1";
+    document.body.classList.toggle("preds-hidden", hidden);
+    const btn = document.getElementById("privacyToggle");
+    if (btn) btn.querySelector("i").className = hidden ? "fa-solid fa-eye-slash" : "fa-solid fa-eye";
+  }
   function fail() { setBody('<div class="text-center text-secondary py-5"><i class="fa-solid fa-triangle-exclamation fa-2x mb-2 d-block"></i>' + esc(t("netErr")) + "</div>"); }
 
   function go(tab) {
@@ -183,8 +189,10 @@
     try { data = await API.matches(); } catch { return fail(); }
     const matches = data.matches || [];
 
-    const head = '<div class="mb-4"><h2 class="fw-bold mb-0"><i class="fa-solid fa-calendar-days text-accent me-2"></i>' + esc(t("nav.fixtures")) + "</h2>" +
-      '<p class="text-secondary mb-0">' + esc(t("dash.sub")) + "</p></div>";
+    const head = '<div class="d-flex justify-content-between align-items-start mb-4 gap-2">' +
+      '<div><h2 class="fw-bold mb-0"><i class="fa-solid fa-calendar-days text-accent me-2"></i>' + esc(t("nav.fixtures")) + "</h2>" +
+      '<p class="text-secondary mb-0">' + esc(t("dash.sub")) + "</p></div>" +
+      '<button id="privacyToggle" type="button" class="btn btn-outline-secondary btn-sm" title="' + esc(t("dash.privacy")) + '"><i class="fa-solid fa-eye"></i></button></div>';
 
     if (!matches.length) return setBody(head + '<div class="text-center text-secondary py-5"><i class="fa-solid fa-futbol fa-2x mb-3 d-block"></i>' + esc(t("noFixtures")) + "</div>");
 
@@ -217,6 +225,14 @@
     paint();
     requestAnimationFrame(() => centerActive(false));
 
+    const pt = document.getElementById("privacyToggle");
+    if (pt) pt.addEventListener("click", function () {
+      const h = localStorage.getItem("predsHidden") === "1";
+      localStorage.setItem("predsHidden", h ? "0" : "1");
+      applyPrivacy();
+    });
+    applyPrivacy();
+
     if (matches.some((m) => m.badge === "live")) {
       liveTimer = setInterval(() => { if (document.getElementById("days")) renderFixtures(); }, 45000);
     }
@@ -241,14 +257,14 @@
     let bottom;
     if (m.badge === "open") {
       bottom = '<form class="predict" data-id="' + m.id + '"><div class="d-flex align-items-center justify-content-center gap-2 mb-3">' +
-        '<input type="number" name="a" min="0" max="99" class="form-control score-input text-center" value="' + (m.pred ? m.pred.a : "") + '" placeholder="0" required/>' +
+        '<input type="number" name="a" min="0" max="99" class="form-control score-input text-center user-pred" value="' + (m.pred ? m.pred.a : "") + '" placeholder="0" required/>' +
         '<span class="fw-bold text-secondary">-</span>' +
-        '<input type="number" name="b" min="0" max="99" class="form-control score-input text-center" value="' + (m.pred ? m.pred.b : "") + '" placeholder="0" required/></div>' +
+        '<input type="number" name="b" min="0" max="99" class="form-control score-input text-center user-pred" value="' + (m.pred ? m.pred.b : "") + '" placeholder="0" required/></div>' +
         '<button class="btn btn-accent w-100 fw-semibold"><i class="fa-solid fa-floppy-disk me-1"></i>' + esc(m.pred ? t("update") : t("save")) + "</button></form>";
     } else {
       let pick = '<span class="text-secondary fst-italic"><i class="fa-solid fa-ban me-1"></i>' + esc(t("dash.noPrediction")) + "</span>";
       if (m.pred) {
-        pick = '<span class="text-secondary">' + esc(t("yourPick")) + ":</span> <span class=\"fw-semibold\">" + m.pred.a + "-" + m.pred.b + "</span>";
+        pick = '<span class="text-secondary">' + esc(t("yourPick")) + ":</span> <span class=\"fw-semibold user-pred\">" + m.pred.a + "-" + m.pred.b + "</span>";
         if (m.badge === "completed") {
           const p = m.pred.pts;
           const cls = p === 2 ? "badge-done" : p === 1 ? "badge-open" : "badge-locked";
