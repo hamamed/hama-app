@@ -3,7 +3,7 @@
   const t = I18N.t;
   const app = () => document.getElementById("app");
   const LOCALE = { en: "en-GB", fr: "fr-FR", ar: "ar" };
-  const APP_VERSION = "1.3.0"; // bump this when you build a new APK
+  const APP_VERSION = "1.4.0"; // bump this when you build a new APK
   let countdownTimer = null, liveTimer = null;
   let appUpdate = { available: false, url: "https://koydam.com/download/hama.apk" };
   let isAdminUser = false;
