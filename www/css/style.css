@@ -75,6 +75,18 @@ h1, h2, h3, h4, h5, h6, .fw-bold { color: var(--text); letter-spacing: -0.01em; 
 }
 .card-body { color: var(--text); }
 
+/* Community: announcement banners + poll question line breaks */
+.ann-banner {
+  background: var(--accent-soft);
+  border: 1px solid #d4e6ff;
+  border-radius: 14px;
+  padding: 0.6rem 0.9rem;
+  color: var(--accent-dark);
+  font-weight: 600;
+}
+.ann-banner .fa-bullhorn { color: var(--accent); }
+.pre-line { white-space: pre-line; }
+
 .login-hero {
   flex: 1; min-height: calc(100vh - 80px); padding: 2rem 0;
   background:

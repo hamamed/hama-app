@@ -3,7 +3,7 @@
   const t = I18N.t;
   const app = () => document.getElementById("app");
   const LOCALE = { en: "en-GB", fr: "fr-FR", ar: "ar" };
-  const APP_VERSION = "1.0.0"; // bump this when you build a new APK
+  const APP_VERSION = "1.1.0"; // bump this when you build a new APK
   let countdownTimer = null, liveTimer = null;
   let appUpdate = { available: false, url: "https://koydam.com/download/hama.apk" };
 
@@ -194,7 +194,11 @@
       '<p class="text-secondary mb-0">' + esc(t("dash.sub")) + "</p></div>" +
       '<button id="privacyToggle" type="button" class="btn btn-outline-secondary btn-sm" title="' + esc(t("dash.privacy")) + '"><i class="fa-solid fa-eye"></i></button></div>';
 
-    if (!matches.length) return setBody(head + '<div class="text-center text-secondary py-5"><i class="fa-solid fa-futbol fa-2x mb-3 d-block"></i>' + esc(t("noFixtures")) + "</div>");
+    if (!matches.length) {
+      setBody(head + '<div id="community"></div><div class="text-center text-secondary py-5"><i class="fa-solid fa-futbol fa-2x mb-3 d-block"></i>' + esc(t("noFixtures")) + "</div>");
+      loadCommunity();
+      return;
+    }
 
     const counts = {};
     matches.forEach((m) => { m._day = dayKey(m.kickoff); counts[m._day] = (counts[m._day] || 0) + 1; });
@@ -207,7 +211,8 @@
     const daysHtml = '<div class="day-filter mb-4" id="days">' + chip("all", t("day.all"), matches.length) +
       days.map((k) => chip(k, dayLabel(k), counts[k])).join("") + "</div>";
 
-    setBody(head + daysHtml + '<div class="row g-3" id="list"></div>' + howHtml());
+    setBody(head + '<div id="community"></div>' + daysHtml + '<div class="row g-3" id="list"></div>' + howHtml());
+    loadCommunity();
 
     const list = document.getElementById("list");
     function centerActive(smooth) {
@@ -236,6 +241,93 @@
     if (matches.some((m) => m.badge === "live")) {
       liveTimer = setInterval(() => { if (document.getElementById("days")) renderFixtures(); }, 45000);
     }
+  }
+
+  // ---------- COMMUNITY (announcements + polls) ----------
+  async function loadCommunity() {
+    const wrap = document.getElementById("community");
+    if (!wrap) return;
+    let data;
+    try { data = await API.community(); } catch { return; }
+    wrap.innerHTML = communityHtml(data);
+    bindCommunity(wrap, data);
+  }
+
+  function communityHtml(data) {
+    let html = "";
+    (data.announcements || [])
+      .filter((a) => localStorage.getItem("annDismissed_" + a.id) !== "1")
+      .forEach((a) => {
+        html += '<div class="ann-banner d-flex align-items-start gap-2 mb-2" dir="auto">' +
+          '<i class="fa-solid fa-bullhorn mt-1"></i>' +
+          '<div class="flex-grow-1 pre-line">' + esc(a.message) + "</div>" +
+          '<button type="button" class="btn-close ann-dismiss" data-id="' + a.id + '" aria-label="Close"></button></div>';
+      });
+    const polls = data.polls || [];
+    if (polls.length) {
+      html += '<div class="wc-card p-3 mb-3"><h6 class="fw-bold mb-3"><i class="fa-solid fa-square-poll-vertical text-accent me-2"></i>' + esc(t("comm.polls")) + "</h6>";
+      polls.forEach((p, i) => { html += pollHtml(p, i === polls.length - 1); });
+      html += "</div>";
+    }
+    return html;
+  }
+
+  function pollHtml(p, last) {
+    let h = '<div class="' + (last ? "" : "mb-4") + '" data-poll="' + p.id + '">' +
+      '<div class="fw-semibold mb-2 pre-line" dir="auto">' + esc(p.question) + "</div>";
+    if (p.myVote === null) {
+      h += '<div class="d-flex gap-2 poll-vote">' +
+        '<button type="button" class="btn btn-accent btn-sm fw-semibold" data-choice="yes"><i class="fa-solid fa-check me-1"></i>' + esc(t("comm.yes")) + "</button>" +
+        '<button type="button" class="btn btn-outline-secondary btn-sm fw-semibold" data-choice="no"><i class="fa-solid fa-xmark me-1"></i>' + esc(t("comm.no")) + "</button></div>";
+    } else {
+      h += pollResults(p);
+    }
+    return h + "</div>";
+  }
+
+  function pollResults(p) {
+    const total = p.yes + p.no;
+    const yp = total ? Math.round((p.yes / total) * 100) : 0;
+    const np = total ? 100 - yp : 0;
+    return '<div class="small">' +
+      '<div class="d-flex justify-content-between"><span>' + esc(t("comm.yes")) + " · " + p.yes + "</span><span>" + yp + "%</span></div>" +
+      '<div class="progress mb-2" style="height:8px;"><div class="progress-bar bg-success" style="width:' + yp + '%"></div></div>' +
+      '<div class="d-flex justify-content-between"><span>' + esc(t("comm.no")) + " · " + p.no + "</span><span>" + np + "%</span></div>" +
+      '<div class="progress mb-1" style="height:8px;"><div class="progress-bar bg-secondary" style="width:' + np + '%"></div></div>' +
+      '<div class="d-flex justify-content-between align-items-center text-secondary mt-1">' +
+        "<span>" + esc(t("comm.youVoted")) + " <strong>" + esc(p.myVote ? t("comm.yes") : t("comm.no")) + "</strong></span>" +
+        "<span>" + total + " " + esc(t("comm.votes")) + "</span></div>" +
+      '<button type="button" class="btn btn-link btn-sm p-0 mt-1 text-decoration-none poll-change"><i class="fa-solid fa-pen me-1"></i>' + esc(t("comm.changeVote")) + "</button></div>";
+  }
+
+  function bindCommunity(wrap, data) {
+    wrap.querySelectorAll(".ann-dismiss").forEach((b) =>
+      b.addEventListener("click", () => {
+        localStorage.setItem("annDismissed_" + b.dataset.id, "1");
+        const banner = b.closest(".ann-banner");
+        if (banner) banner.remove();
+      }));
+
+    wrap.querySelectorAll("[data-poll]").forEach((node) => {
+      const id = node.getAttribute("data-poll");
+      node.addEventListener("click", async (e) => {
+        const voteBtn = e.target.closest("[data-choice]");
+        if (voteBtn) {
+          try { await API.vote(id, voteBtn.dataset.choice); } catch (_) { return; }
+          await loadCommunity();
+          return;
+        }
+        const change = e.target.closest(".poll-change");
+        if (change && !node.querySelector(".poll-vote")) {
+          const p = (data.polls || []).find((x) => x.id === id) || {};
+          change.insertAdjacentHTML("afterend",
+            '<div class="d-flex gap-2 poll-vote mt-2">' +
+            '<button type="button" class="btn btn-sm fw-semibold ' + (p.myVote ? "btn-accent" : "btn-outline-secondary") + '" data-choice="yes"><i class="fa-solid fa-check me-1"></i>' + esc(t("comm.yes")) + "</button>" +
+            '<button type="button" class="btn btn-sm fw-semibold ' + (!p.myVote ? "btn-accent" : "btn-outline-secondary") + '" data-choice="no"><i class="fa-solid fa-xmark me-1"></i>' + esc(t("comm.no")) + "</button></div>");
+          change.style.display = "none";
+        }
+      });
+    });
   }
 
   function badgeHtml(b, pts) {
