@@ -86,6 +86,7 @@ h1, h2, h3, h4, h5, h6, .fw-bold { color: var(--text); letter-spacing: -0.01em; 
 }
 .ann-banner .fa-bullhorn { color: var(--accent); }
 .pre-line { white-space: pre-line; }
+.stat-tile { background: var(--surface-2); border: 1px solid var(--line); }
 
 .login-hero {
   flex: 1; min-height: calc(100vh - 80px); padding: 2rem 0;

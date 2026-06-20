@@ -44,6 +44,7 @@ window.API = (function () {
     profile: () => call("/profile"),
     champion: (champion) => call("/champion", { method: "POST", body: { champion } }),
     matchPreds: (id) => call("/match/" + id + "/predictions"),
+    userProfile: (id) => call("/user/" + id),
     community: () => call("/community"),
     vote: (pollId, choice) => call("/vote", { method: "POST", body: { pollId, choice } }),
     appVersion: () => call("/app-version"),

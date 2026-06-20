@@ -3,7 +3,7 @@
   const t = I18N.t;
   const app = () => document.getElementById("app");
   const LOCALE = { en: "en-GB", fr: "fr-FR", ar: "ar" };
-  const APP_VERSION = "1.1.0"; // bump this when you build a new APK
+  const APP_VERSION = "1.2.0"; // bump this when you build a new APK
   let countdownTimer = null, liveTimer = null;
   let appUpdate = { available: false, url: "https://koydam.com/download/hama.apk" };
 
@@ -522,11 +522,68 @@
         '<span class="text-secondary"><i class="fa-solid fa-minus"></i></span>';
       const av = u.avatar ? '<img src="' + esc(u.avatar) + '" class="avatar-mini me-2" alt=""/>' : '<i class="fa-solid fa-user-circle text-secondary me-2"></i>';
       const gained = u.gained > 0 ? ' <small class="text-success fw-bold">+' + u.gained + "</small>" : "";
-      html += '<tr class="' + (u.me ? "row-me" : "") + '"><td class="ps-4">' + medal + '</td><td class="text-center small fw-bold">' + move +
+      html += '<tr class="user-row ' + (u.me ? "row-me" : "") + '" data-id="' + u.id + '" style="cursor:pointer"><td class="ps-4">' + medal + '</td><td class="text-center small fw-bold">' + move +
         "</td><td>" + av + '<span class="fw-semibold">' + esc(u.username) + "</span>" +
         (u.me ? ' <span class="badge wc-userchip ms-2">' + esc(t("lb.you")) + "</span>" : "") + '</td><td class="text-end pe-4 fw-bold text-accent">' + u.totalPoints + gained + "</td></tr>";
     });
     setBody(html + "</tbody></table></div></div>");
+    document.querySelectorAll(".user-row").forEach((r) =>
+      r.addEventListener("click", () => openUserProfile(r.dataset.id)));
+  }
+
+  function openUserProfile(id) {
+    let el = document.getElementById("userModal");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "userModal"; el.className = "modal fade"; el.tabIndex = -1;
+      el.innerHTML = '<div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered"><div class="modal-content wc-card border-0">' +
+        '<div class="modal-header"><h5 class="modal-title fw-bold d-flex align-items-center gap-2" id="upTitle"></h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>' +
+        '<div class="modal-body" id="upBody"></div></div></div>';
+      document.body.appendChild(el);
+    }
+    const title = document.getElementById("upTitle"), body = document.getElementById("upBody");
+    title.textContent = "…"; body.innerHTML = loading();
+    bootstrap.Modal.getOrCreateInstance(el).show();
+
+    API.userProfile(id).then((d) => {
+      const av = d.avatar ? '<img src="' + esc(d.avatar) + '" class="avatar-mini" alt=""/>' : '<i class="fa-solid fa-user-circle text-secondary"></i>';
+      title.innerHTML = av + " " + esc(d.username);
+      const s = d.stats;
+      const tile = (label, value, cls) =>
+        '<div class="col-6 col-md-3"><div class="stat-tile text-center p-2 rounded">' +
+        '<div class="fw-bold fs-5 ' + (cls || "text-accent") + '">' + value + "</div>" +
+        '<div class="small text-secondary">' + esc(label) + "</div></div></div>";
+      let h = '<div class="row g-2 mb-3">' +
+        tile(t("stat.totalPoints"), s.totalPoints, "text-accent") +
+        tile(t("stat.exact"), s.exact, "text-success") +
+        tile(t("stat.outcomes"), s.outcome, "text-primary") +
+        tile(t("stat.hitRate"), s.hitRate + "%", "text-accent") +
+        tile(t("stat.made"), s.made) +
+        tile(t("stat.scored2"), s.scored) +
+        tile(t("stat.pending"), s.pending) +
+        tile(t("stat.missed"), s.missed, "text-danger") +
+        "</div>";
+      h += '<h6 class="fw-bold mb-2"><i class="fa-solid fa-clock-rotate-left text-accent me-2"></i>' + esc(t("hist.title")) + "</h6>";
+      if (!d.history.length) {
+        h += '<div class="text-center text-secondary py-3">' + esc(t("hist.none")) + "</div>";
+      } else {
+        h += '<div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr><th>' +
+          esc(t("hist.match")) + '</th><th class="text-center">' + esc(t("hist.yourPick")) + '</th><th class="text-center">' +
+          esc(t("hist.result")) + '</th><th class="text-end">' + esc(t("hist.points")) + "</th></tr></thead><tbody>";
+        h += d.history.map((x) => {
+          let b;
+          if (x.points === 2) b = '<span class="badge wc-badge badge-done">+2</span>';
+          else if (x.points === 1) b = '<span class="badge wc-badge badge-open">+1</span>';
+          else if (x.points === 0) b = '<span class="badge wc-badge badge-locked">0</span>';
+          else b = '<span class="text-secondary">—</span>';
+          return "<tr><td>" + esc(x.teamA) + ' <span class="text-secondary">vs</span> ' + esc(x.teamB) +
+            '</td><td class="text-center fw-semibold">' + esc(x.pred) + '</td><td class="text-center">' + esc(x.result || "—") +
+            '</td><td class="text-end">' + b + "</td></tr>";
+        }).join("");
+        h += "</tbody></table></div>";
+      }
+      body.innerHTML = h;
+    }).catch(() => { body.innerHTML = '<div class="text-center text-danger py-4">' + esc(t("netErr")) + "</div>"; });
   }
 
   // ---------- PROFILE ----------
