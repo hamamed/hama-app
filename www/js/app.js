@@ -219,8 +219,14 @@
     } else {
       let pick = '<span class="text-secondary fst-italic"><i class="fa-solid fa-ban me-1"></i>' + esc(t("dash.noPrediction")) + "</span>";
       if (m.pred) {
-        pick = '<span class="text-secondary">' + esc(t("yourPick")) + ":</span> <span class=\"fw-semibold\">" + m.pred.a + "-" + m.pred.b + "</span>" +
-          (m.badge === "completed" ? ' <span class="badge wc-badge badge-open ms-1">' + m.pred.pts + " " + esc(t("pts")) + "</span>" : "");
+        pick = '<span class="text-secondary">' + esc(t("yourPick")) + ":</span> <span class=\"fw-semibold\">" + m.pred.a + "-" + m.pred.b + "</span>";
+        if (m.badge === "completed") {
+          const p = m.pred.pts;
+          const cls = p === 2 ? "badge-done" : p === 1 ? "badge-open" : "badge-locked";
+          const ic = p === 2 ? "fa-bullseye" : p === 1 ? "fa-check" : "fa-xmark";
+          const ex = p === 2 ? esc(t("dash.exactBonus")) + " " : "";
+          pick += '<div class="mt-2"><span class="badge wc-badge ' + cls + '"><i class="fa-solid ' + ic + ' me-1"></i>' + ex + esc(t("dash.earned")) + " +" + p + " " + esc(t("pts")) + "</span></div>";
+        }
       }
       bottom = '<div class="text-center small">' + pick + "</div>" +
         '<div class="mt-2 text-center"><button type="button" class="btn btn-link p-0 small text-accent text-decoration-none see-all" data-id="' + m.id + '">' +
@@ -288,11 +294,46 @@
         let pts = "";
         if (j.completed) { const b = p.pts === 2 ? "badge-done" : p.pts === 1 ? "badge-open" : "badge-locked"; pts = '<td class="text-end"><span class="badge wc-badge ' + b + '">' + (p.pts > 0 ? "+" : "") + p.pts + "</span></td>"; }
         const mine = p.username === me;
-        h += '<tr class="' + (mine ? "row-me" : "") + '"><td class="text-secondary">' + (i + 1) + '</td><td class="fw-semibold">' + esc(p.username) +
+        const av = p.avatar ? '<img src="' + esc(p.avatar) + '" class="avatar-mini me-2" alt=""/>' : "";
+        h += '<tr class="' + (mine ? "row-me" : "") + '"><td class="text-secondary">' + (i + 1) + '</td><td class="fw-semibold">' + av + esc(p.username) +
           (mine ? ' <span class="badge wc-userchip ms-1">' + esc(t("lb.you")) + "</span>" : "") + '</td><td class="text-center fw-bold">' + p.a + " - " + p.b + "</td>" + pts + "</tr>";
       });
       body.innerHTML = h + "</tbody></table></div>";
     }).catch(() => { body.innerHTML = '<div class="text-center text-danger py-4">' + esc(t("netErr")) + "</div>"; });
+  }
+
+  // ---------- Profile editors (flag picker + username) ----------
+  function openFlagPicker(flags) {
+    let el = document.getElementById("flagModal");
+    if (!el) { el = document.createElement("div"); el.id = "flagModal"; el.className = "modal fade"; el.tabIndex = -1; document.body.appendChild(el); }
+    el.innerHTML = '<div class="modal-dialog modal-dialog-scrollable modal-dialog-centered"><div class="modal-content wc-card border-0">' +
+      '<div class="modal-header"><h5 class="modal-title fw-bold">' + esc(t("profile.chooseFlag")) + '</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>' +
+      '<div class="modal-body"><div class="row g-2">' +
+        flags.map((f) => '<div class="col-3 col-md-2"><button type="button" class="flag-pick" data-code="' + esc(f.code) + '" title="' + esc(f.name) + '"><img src="' + esc(f.url) + '" alt="" onerror="this.closest(\'.flag-pick\').style.display=\'none\'"/></button></div>').join("") +
+      "</div></div></div></div>";
+    const modal = bootstrap.Modal.getOrCreateInstance(el);
+    modal.show();
+    el.querySelectorAll(".flag-pick").forEach((b) => b.addEventListener("click", async function () {
+      try { const r = await API.setAvatar(this.dataset.code); API.updateUser({ avatar: r.avatar }); modal.hide(); go("profile"); }
+      catch (e) { toast(t("netErr"), false); }
+    }));
+  }
+  function openNameEditor(name) {
+    let el = document.getElementById("nameModal");
+    if (!el) { el = document.createElement("div"); el.id = "nameModal"; el.className = "modal fade"; el.tabIndex = -1; document.body.appendChild(el); }
+    el.innerHTML = '<div class="modal-dialog modal-dialog-centered"><div class="modal-content wc-card border-0">' +
+      '<div class="modal-header"><h5 class="modal-title fw-bold">' + esc(t("profile.changeName")) + '</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>' +
+      '<div class="modal-body"><div class="input-group input-group-lg"><span class="input-group-text"><i class="fa-solid fa-at"></i></span>' +
+      '<input id="nameInput" class="form-control" maxlength="20" value="' + esc(name) + '"/></div></div>' +
+      '<div class="modal-footer"><button id="nameSave" class="btn btn-accent w-100 fw-semibold">' + esc(t("profile.save")) + "</button></div></div></div>";
+    const modal = bootstrap.Modal.getOrCreateInstance(el);
+    modal.show();
+    el.querySelector("#nameSave").addEventListener("click", async function () {
+      const v = (el.querySelector("#nameInput").value || "").trim();
+      if (!/^[a-zA-Z0-9_-]{3,20}$/.test(v)) return toast(t("login.invalid"), false);
+      try { const r = await API.setUsername(v); API.updateUser({ username: r.username }); modal.hide(); go("profile"); }
+      catch (e) { toast(e.status === 409 ? t("profile.taken") : t("netErr"), false); }
+    });
   }
 
   // ---------- GROUPS ----------
@@ -342,9 +383,11 @@
       const move = u.move > 0 ? '<span class="text-success"><i class="fa-solid fa-caret-up"></i> ' + u.move + "</span>" :
         u.move < 0 ? '<span class="text-danger"><i class="fa-solid fa-caret-down"></i> ' + -u.move + "</span>" :
         '<span class="text-secondary"><i class="fa-solid fa-minus"></i></span>';
+      const av = u.avatar ? '<img src="' + esc(u.avatar) + '" class="avatar-mini me-2" alt=""/>' : '<i class="fa-solid fa-user-circle text-secondary me-2"></i>';
+      const gained = u.gained > 0 ? ' <small class="text-success fw-bold">+' + u.gained + "</small>" : "";
       html += '<tr class="' + (u.me ? "row-me" : "") + '"><td class="ps-4">' + medal + '</td><td class="text-center small fw-bold">' + move +
-        '</td><td><i class="fa-solid fa-user-circle text-secondary me-2"></i><span class="fw-semibold">' + esc(u.username) + "</span>" +
-        (u.me ? ' <span class="badge wc-userchip ms-2">' + esc(t("lb.you")) + "</span>" : "") + '</td><td class="text-end pe-4 fw-bold text-accent">' + u.totalPoints + "</td></tr>";
+        "</td><td>" + av + '<span class="fw-semibold">' + esc(u.username) + "</span>" +
+        (u.me ? ' <span class="badge wc-userchip ms-2">' + esc(t("lb.you")) + "</span>" : "") + '</td><td class="text-end pe-4 fw-bold text-accent">' + u.totalPoints + gained + "</td></tr>";
     });
     setBody(html + "</tbody></table></div></div>");
   }
@@ -354,10 +397,15 @@
     let d; try { d = await API.profile(); } catch { return fail(); }
     const s = d.stats;
 
+    const avHtml = d.avatar ? '<img src="' + esc(d.avatar) + '" alt="avatar"/>' : '<i class="fa-solid fa-user-astronaut"></i>';
     let html = '<div class="d-flex flex-wrap align-items-center gap-3 mb-4">' +
-      '<div class="profile-avatar"><i class="fa-solid fa-user-astronaut"></i></div>' +
+      '<div class="profile-avatar">' + avHtml + "</div>" +
       '<div class="me-auto"><h2 class="fw-bold mb-0">' + esc(d.username) + '</h2><p class="text-secondary mb-0">' + s.totalPoints + " " + esc(t("pts")) + "</p></div>" +
-      '<a href="#" id="logout" class="btn btn-outline-danger btn-sm"><i class="fa-solid fa-right-from-bracket me-1"></i>' + esc(t("profile.logout")) + "</a></div>";
+      '<div class="d-flex gap-2 flex-wrap">' +
+        '<button id="changePhoto" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-flag me-1"></i>' + esc(t("profile.changePhoto")) + "</button>" +
+        '<button id="changeName" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-pen me-1"></i>' + esc(t("profile.changeName")) + "</button>" +
+        '<button id="logout" class="btn btn-outline-danger btn-sm"><i class="fa-solid fa-right-from-bracket me-1"></i>' + esc(t("profile.logout")) + "</button>" +
+      "</div></div>";
 
     html += '<div class="langrow mb-4">' + I18N.LANGS.map((l) =>
       '<button class="btn btn-sm ' + (l.c === I18N.lang() ? "btn-accent" : "btn-outline-secondary") + '" data-l="' + l.c + '">' + esc(l.n) + "</button>").join("") + "</div>";
@@ -416,6 +464,8 @@
     setBody(html);
 
     document.getElementById("logout").addEventListener("click", (e) => { e.preventDefault(); API.logout(); renderLogin(); });
+    document.getElementById("changePhoto").addEventListener("click", () => openFlagPicker(d.flags || []));
+    document.getElementById("changeName").addEventListener("click", () => openNameEditor(d.username));
     document.querySelectorAll("[data-l]").forEach((b) => b.addEventListener("click", () => { I18N.setLang(b.dataset.l); applyDir(); go("profile"); }));
     const cf = document.getElementById("cf");
     if (cf) cf.addEventListener("submit", async (e) => {

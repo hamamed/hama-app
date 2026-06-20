@@ -44,5 +44,11 @@ window.API = (function () {
     profile: () => call("/profile"),
     champion: (champion) => call("/champion", { method: "POST", body: { champion } }),
     matchPreds: (id) => call("/match/" + id + "/predictions"),
+    setUsername: (username) => call("/username", { method: "POST", body: { username } }),
+    setAvatar: (avatar) => call("/avatar", { method: "POST", body: { avatar } }),
+    updateUser: (patch) => {
+      const u = Object.assign(JSON.parse(localStorage.getItem("wc_user") || "{}"), patch);
+      localStorage.setItem("wc_user", JSON.stringify(u));
+    },
   };
 })();
