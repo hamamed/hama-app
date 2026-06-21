@@ -531,10 +531,10 @@
         '<div class="podium-points">' + u.totalPoints + " " + esc(t("pts")) + "</div>" +
         '<div class="podium-bar">' + rank + "</div></div>";
     };
-    const podium = '<div class="card wc-card border-0 mb-4"><div class="card-body"><div class="podium mb-0">' +
-      podPlace(users[1], 2) + podPlace(users[0], 1) + podPlace(users[2], 3) + "</div></div></div>";
+    const podium = '<div class="card-body pb-0"><div class="podium mb-0">' +
+      podPlace(users[1], 2) + podPlace(users[0], 1) + podPlace(users[2], 3) + "</div></div>";
 
-    let html = head + podium + '<div class="card wc-card border-0"><div class="table-responsive"><table class="table table-hover align-middle mb-0">' +
+    let html = head + '<div class="card wc-card border-0">' + podium + '<div class="table-responsive"><table class="table table-hover align-middle mb-0">' +
       '<thead><tr><th class="ps-4" style="width:70px">' + esc(t("lb.rank")) + '</th><th style="width:54px" class="text-center"><i class="fa-solid fa-arrows-up-down"></i></th><th>' +
       esc(t("lb.player")) + '</th><th class="text-end pe-4">' + esc(t("lb.points")) + "</th></tr></thead><tbody>";
     users.forEach((u) => {
