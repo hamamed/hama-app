@@ -72,6 +72,7 @@ window.API = (function () {
       userDelete: (id) => call("/admin/users/delete/" + id, { method: "POST" }),
       userPreds: (id) => call("/admin/users/" + id + "/predictions"),
       userPredDelete: (userId, matchId) => call("/admin/users/" + userId + "/predictions/" + matchId + "/delete", { method: "POST" }),
+      userPredEdit: (userId, matchId, scoreA, scoreB, points) => call("/admin/users/" + userId + "/predictions/" + matchId + "/edit", { method: "POST", body: { scoreA, scoreB, points } }),
     },
     setUsername: (username) => call("/username", { method: "POST", body: { username } }),
     setAvatar: (avatar) => call("/avatar", { method: "POST", body: { avatar } }),

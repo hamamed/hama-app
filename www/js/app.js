@@ -904,24 +904,42 @@
       if (!/^[a-zA-Z0-9_-]{3,20}$/.test(name)) return toast(t("login.invalid"), false);
       API.admin.userRename(b.dataset.rensave, name).then(adminUsers).catch((e) => toast(e && e.status === 409 ? t("profile.taken") : t("netErr"), false));
     }));
-    m.body.querySelectorAll("[data-preds]").forEach((b) => b.addEventListener("click", () => {
-      const uid = b.dataset.preds;
-      API.admin.userPreds(uid).then((r) => {
-        const rows = r.predictions.length
-          ? r.predictions.map((p) => "<tr><td>" + esc(p.match) + '</td><td class="text-center fw-semibold">' + esc(p.pick) + '</td><td class="text-center">' + esc(p.result) + '</td><td class="text-end fw-bold text-accent">' + p.points + '</td><td class="text-end"><button class="btn btn-outline-danger btn-sm del-pred" data-match="' + esc(p.matchId) + '"><i class="fa-solid fa-trash"></i></button></td></tr>').join("")
-          : '<tr><td colspan="5" class="text-center text-secondary py-3">No predictions.</td></tr>';
-        m.body.innerHTML = '<button class="btn btn-outline-secondary btn-sm mb-2" id="amBack"><i class="fa-solid fa-arrow-left me-1"></i>Back</button>' +
-          "<h6 class=\"fw-bold\">" + esc(r.username) + '</h6><div class="table-responsive"><table class="table table-sm align-middle mb-0"><thead><tr><th>Match</th><th class="text-center">Pick</th><th class="text-center">Result</th><th class="text-end">Pts</th><th></th></tr></thead><tbody>' + rows + "</tbody></table></div>";
-        m.body.querySelector("#amBack").addEventListener("click", adminUsers);
-        m.body.querySelectorAll(".del-pred").forEach((db) => db.addEventListener("click", () => {
-          if (!confirm("Delete this prediction? Any points it earned are removed.")) return;
-          db.disabled = true;
-          API.admin.userPredDelete(uid, db.dataset.match)
-            .then(() => { const tr = db.closest("tr"); if (tr) tr.remove(); })
-            .catch(() => { db.disabled = false; toast(t("netErr"), false); });
-        }));
-      }).catch(() => toast(t("netErr"), false));
-    }));
+    m.body.querySelectorAll("[data-preds]").forEach((b) => b.addEventListener("click", () => showUserPreds(b.dataset.preds, null)));
+  }
+
+  function showUserPreds(uid, editId) {
+    API.admin.userPreds(uid).then((r) => {
+      const body = document.getElementById("amBody");
+      if (!body) return;
+      const rows = r.predictions.length ? r.predictions.map((p) => {
+        if (p.matchId === editId) {
+          return "<tr><td>" + esc(p.match) + "</td>" +
+            '<td class="text-center"><div class="d-inline-flex gap-1 align-items-center"><input type="number" min="0" class="form-control form-control-sm text-center ea" style="width:40px" value="' + esc(p.predA) + '"/><span>-</span><input type="number" min="0" class="form-control form-control-sm text-center eb" style="width:40px" value="' + esc(p.predB) + '"/></div></td>' +
+            '<td class="text-center">' + esc(p.result) + "</td>" +
+            '<td class="text-end"><input type="number" min="0" class="form-control form-control-sm text-center ep" style="width:50px" value="' + esc(p.points) + '"/></td>' +
+            '<td class="text-end"><button class="btn btn-accent btn-sm sv" data-match="' + esc(p.matchId) + '"><i class="fa-solid fa-check"></i></button> <button class="btn btn-outline-secondary btn-sm cx"><i class="fa-solid fa-xmark"></i></button></td></tr>';
+        }
+        return "<tr><td>" + esc(p.match) + '</td><td class="text-center fw-semibold">' + esc(p.pick) + '</td><td class="text-center">' + esc(p.result) + '</td><td class="text-end fw-bold text-accent">' + p.points + "</td>" +
+          '<td class="text-end"><button class="btn btn-outline-secondary btn-sm ed" data-match="' + esc(p.matchId) + '"><i class="fa-solid fa-pen"></i></button> <button class="btn btn-outline-danger btn-sm del" data-match="' + esc(p.matchId) + '"><i class="fa-solid fa-trash"></i></button></td></tr>';
+      }).join("") : '<tr><td colspan="5" class="text-center text-secondary py-3">No predictions.</td></tr>';
+      body.innerHTML = '<button class="btn btn-outline-secondary btn-sm mb-2" id="amBack"><i class="fa-solid fa-arrow-left me-1"></i>Back</button>' +
+        '<h6 class="fw-bold">' + esc(r.username) + '</h6><div class="table-responsive"><table class="table table-sm align-middle mb-0"><thead><tr><th>Match</th><th class="text-center">Pick</th><th class="text-center">Result</th><th class="text-end">Pts</th><th></th></tr></thead><tbody>' + rows + "</tbody></table></div>";
+      body.querySelector("#amBack").addEventListener("click", adminUsers);
+      body.querySelectorAll(".ed").forEach((b) => b.addEventListener("click", () => showUserPreds(uid, b.dataset.match)));
+      body.querySelectorAll(".cx").forEach((b) => b.addEventListener("click", () => showUserPreds(uid, null)));
+      body.querySelectorAll(".del").forEach((b) => b.addEventListener("click", () => {
+        if (!confirm("Delete this prediction? Any points it earned are removed.")) return;
+        b.disabled = true;
+        API.admin.userPredDelete(uid, b.dataset.match).then(() => showUserPreds(uid, null)).catch(() => { b.disabled = false; toast(t("netErr"), false); });
+      }));
+      body.querySelectorAll(".sv").forEach((b) => b.addEventListener("click", () => {
+        const tr = b.closest("tr");
+        const a = tr.querySelector(".ea").value, bb = tr.querySelector(".eb").value, p = tr.querySelector(".ep").value;
+        if (a === "" || bb === "") return toast("Enter a score", false);
+        b.disabled = true;
+        API.admin.userPredEdit(uid, b.dataset.match, a, bb, p).then(() => showUserPreds(uid, null)).catch(() => { b.disabled = false; toast(t("netErr"), false); });
+      }));
+    }).catch(() => toast(t("netErr"), false));
   }
 
   // ---------- boot ----------
