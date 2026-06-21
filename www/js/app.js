@@ -557,10 +557,11 @@
       const ava = u.avatar
         ? '<img class="podium-avatar" src="' + esc(u.avatar) + '" alt=""/>'
         : '<span class="podium-avatar d-inline-flex align-items-center justify-content-center"><i class="fa-solid fa-user text-secondary"></i></span>';
+      const liveTag = u.livePts > 0 ? ' <span class="text-danger"><span class="live-dot"></span>+' + u.livePts + "</span>" : "";
       return '<div class="podium-place podium-' + rank + '" data-id="' + esc(u.id) + '">' +
         '<div class="podium-ava-wrap">' + ava + '<span class="medal medal-' + cls + ' podium-medal">' + rank + "</span></div>" +
         '<div class="podium-name">' + esc(u.username) + "</div>" +
-        '<div class="podium-points">' + u.totalPoints + " " + esc(t("pts")) + "</div>" +
+        '<div class="podium-points">' + u.totalPoints + " " + esc(t("pts")) + liveTag + "</div>" +
         '<div class="podium-bar">' + rank + "</div></div>";
     };
     const podium = '<div class="card wc-card border-0 mb-4"><div class="card-body"><div class="podium mb-0">' +
@@ -576,7 +577,7 @@
         u.move < 0 ? '<span class="text-danger"><i class="fa-solid fa-caret-down"></i> ' + -u.move + "</span>" :
         '<span class="text-secondary"><i class="fa-solid fa-minus"></i></span>';
       const av = u.avatar ? '<img src="' + esc(u.avatar) + '" class="avatar-mini me-2" alt=""/>' : '<i class="fa-solid fa-user-circle text-secondary me-2"></i>';
-      const gained = u.gained > 0 ? ' <small class="text-success fw-bold">+' + u.gained + "</small>" : "";
+      const gained = u.livePts > 0 ? ' <small class="text-danger fw-bold"><span class="live-dot"></span>+' + u.livePts + "</small>" : u.gained > 0 ? ' <small class="text-success fw-bold">+' + u.gained + "</small>" : "";
       html += '<tr class="user-row ' + (u.me ? "row-me" : "") + '" data-id="' + u.id + '" style="cursor:pointer"><td class="ps-4">' + medal + '</td><td class="text-center small fw-bold">' + move +
         "</td><td>" + av + '<span class="fw-semibold">' + esc(u.username) + "</span>" +
         (u.me ? ' <span class="badge wc-userchip ms-2">' + esc(t("lb.you")) + "</span>" : "") + '</td><td class="text-end pe-4 fw-bold text-accent">' + u.totalPoints + gained + "</td></tr>";
