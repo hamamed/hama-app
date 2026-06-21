@@ -517,7 +517,23 @@
     const head = '<div class="mb-4"><h2 class="fw-bold mb-0"><i class="fa-solid fa-trophy text-accent me-2"></i>' + esc(t("lb.title")) + "</h2></div>";
     if (!users.length) return setBody(head + '<div class="text-center text-secondary py-5">' + esc(t("lb.empty")) + "</div>");
     const me = (API.user() || {}).username;
-    let html = head + '<div class="card wc-card border-0"><div class="table-responsive"><table class="table table-hover align-middle mb-0">' +
+
+    // Top-3 podium (2nd · 1st · 3rd)
+    const podPlace = (u, rank) => {
+      if (!u) return "";
+      const cls = rank === 1 ? "gold" : rank === 2 ? "silver" : "bronze";
+      const ava = u.avatar
+        ? '<img class="podium-avatar" src="' + esc(u.avatar) + '" alt=""/>'
+        : '<span class="podium-avatar d-inline-flex align-items-center justify-content-center"><i class="fa-solid fa-user text-secondary"></i></span>';
+      return '<div class="podium-place podium-' + rank + '" data-id="' + esc(u.id) + '">' +
+        '<div class="podium-ava-wrap">' + ava + '<span class="medal medal-' + cls + ' podium-medal">' + rank + "</span></div>" +
+        '<div class="podium-name">' + esc(u.username) + "</div>" +
+        '<div class="podium-points">' + u.totalPoints + " " + esc(t("pts")) + "</div>" +
+        '<div class="podium-bar">' + rank + "</div></div>";
+    };
+    const podium = '<div class="podium">' + podPlace(users[1], 2) + podPlace(users[0], 1) + podPlace(users[2], 3) + "</div>";
+
+    let html = head + podium + '<div class="card wc-card border-0"><div class="table-responsive"><table class="table table-hover align-middle mb-0">' +
       '<thead><tr><th class="ps-4" style="width:70px">' + esc(t("lb.rank")) + '</th><th style="width:54px" class="text-center"><i class="fa-solid fa-arrows-up-down"></i></th><th>' +
       esc(t("lb.player")) + '</th><th class="text-end pe-4">' + esc(t("lb.points")) + "</th></tr></thead><tbody>";
     users.forEach((u) => {
@@ -533,7 +549,7 @@
         (u.me ? ' <span class="badge wc-userchip ms-2">' + esc(t("lb.you")) + "</span>" : "") + '</td><td class="text-end pe-4 fw-bold text-accent">' + u.totalPoints + gained + "</td></tr>";
     });
     setBody(html + "</tbody></table></div></div>");
-    document.querySelectorAll(".user-row").forEach((r) =>
+    document.querySelectorAll(".user-row, .podium-place").forEach((r) =>
       r.addEventListener("click", () => openUserProfile(r.dataset.id)));
   }
 
