@@ -693,16 +693,19 @@
       const comments = p.comments.map((c) => {
         const cav = c.avatar ? '<img src="' + esc(c.avatar) + '" class="avatar-mini me-1" alt=""/>' : "";
         const cdel = (c.mine || isAdm) ? '<button class="btn btn-link btn-sm text-danger p-0 del-comment" data-id="' + c.id + '"><i class="fa-solid fa-trash"></i></button>' : "";
-        return '<div class="d-flex gap-2 py-2 border-top"><div class="flex-grow-1 min-w-0"><div class="small text-secondary">' + cav +
+        return '<div class="d-flex gap-2 py-2 border-top ' + (c.isNew ? "comment-new" : "") + '"><div class="flex-grow-1 min-w-0"><div class="small text-secondary">' + cav +
           '<span class="fw-semibold text-body">' + esc(c.username) + "</span> · " + agoShort(c.createdAt) + '</div><div class="pre-line small" dir="auto">' + esc(c.body) + "</div></div>" + cdel + "</div>";
       }).join("");
-      return '<div class="card wc-card border-0 mb-3"><div class="card-body d-flex gap-3">' +
+      const newPill = p.isNew ? ' <span class="badge rounded-pill text-bg-danger">' + esc(t("comm2.new")) + "</span>"
+        : (p.hasNewComments ? ' <span class="badge rounded-pill text-bg-primary"><i class="fa-solid fa-comment-dots me-1"></i>' + esc(t("comm2.new")) + "</span>" : "");
+      const cardCls = p.isNew ? " post-new" : (p.hasNewComments ? " post-newc" : "");
+      return '<div class="card wc-card border-0 mb-3' + cardCls + '"><div class="card-body d-flex gap-3">' +
         '<div class="vote-col text-center" data-id="' + p.id + '">' +
           '<button class="vote-btn up ' + (p.myVote === 1 ? "active" : "") + '" data-value="1"><i class="fa-solid fa-caret-up"></i></button>' +
           '<div class="vote-score fw-bold">' + p.score + "</div>" +
           '<button class="vote-btn down ' + (p.myVote === -1 ? "active" : "") + '" data-value="-1"><i class="fa-solid fa-caret-down"></i></button></div>' +
         '<div class="flex-grow-1 min-w-0">' +
-          '<div class="small text-secondary mb-1">' + av + '<span class="fw-semibold text-body">' + esc(p.username) + "</span> · " + agoShort(p.createdAt) + del + "</div>" +
+          '<div class="small text-secondary mb-1">' + av + '<span class="fw-semibold text-body">' + esc(p.username) + "</span> · " + agoShort(p.createdAt) + newPill + del + "</div>" +
           '<div class="pre-line mb-2" dir="auto">' + esc(p.body) + "</div>" +
           '<button class="btn btn-link btn-sm p-0 text-secondary text-decoration-none toggle-comments" data-id="' + p.id + '"><i class="fa-regular fa-comment me-1"></i>' + p.commentCount + " " + esc(t("comm2.comments")) + "</button>" +
           '<div class="comments-box d-none mt-2" data-id="' + p.id + '">' + comments +
