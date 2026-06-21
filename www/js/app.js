@@ -7,9 +7,11 @@
   let countdownTimer = null, liveTimer = null;
   let appUpdate = { available: false, url: "https://koydam.com/download/hama.apk" };
   let isAdminUser = false;
+  let communityNew = 0;
 
   async function checkAdmin() {
-    try { const r = await API.me(); isAdminUser = !!r.isAdmin; } catch (e) { isAdminUser = false; }
+    try { const r = await API.me(); isAdminUser = !!r.isAdmin; communityNew = r.communityNew || 0; }
+    catch (e) { isAdminUser = false; }
   }
 
   function openExternal(url) {
@@ -99,8 +101,10 @@
       "</div></nav>" +
       '<div class="container py-4" id="screen">' + bodyHtml + "</div>" +
       '<nav class="bottom-nav">' + tabs.map((x) =>
-        '<button class="bottom-nav-item ' + (x.id === activeTab ? "active" : "") + '" data-tab="' + x.id + '">' +
-        '<i class="fa-solid ' + x.icon + '"></i><span>' + esc(x.label) + "</span></button>").join("") + "</nav>";
+        '<button class="bottom-nav-item position-relative ' + (x.id === activeTab ? "active" : "") + '" data-tab="' + x.id + '">' +
+        '<i class="fa-solid ' + x.icon + '"></i><span>' + esc(x.label) + "</span>" +
+        (x.id === "community" && communityNew > 0 ? '<span class="badge rounded-pill text-bg-danger nav-badge">' + (communityNew > 99 ? "99+" : communityNew) + "</span>" : "") +
+        "</button>").join("") + "</nav>";
 
     app().querySelectorAll(".bottom-nav-item").forEach((b) => b.addEventListener("click", () => go(b.dataset.tab)));
     app().querySelectorAll("[data-l]").forEach((b) =>
@@ -744,6 +748,10 @@
       if (!confirm("Delete this comment?")) return;
       API.delComment(b.dataset.id).then(renderCommunity).catch(() => toast(t("netErr"), false));
     }));
+
+    // Opening the feed marks it seen — clear the nav badge.
+    communityNew = 0;
+    document.querySelectorAll(".bottom-nav .nav-badge").forEach((e) => e.remove());
   }
 
   // ---------- PROFILE ----------
