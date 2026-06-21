@@ -336,6 +336,16 @@
     });
   }
 
+  // Mirror of the server scoring rules, for provisional live points.
+  function computePts(pa, pb, aa, ab) {
+    pa = +pa; pb = +pb; aa = +aa; ab = +ab;
+    if (pa === aa && pb === ab) return 4;
+    const so = (x, y) => (x > y ? 1 : x < y ? -1 : 0);
+    if (so(pa, pb) !== so(aa, ab)) return 0;
+    if (pa - pb === aa - ab) return 2;
+    return 1;
+  }
+
   function badgeHtml(b, pts) {
     if (b === "completed") return '<span class="badge wc-badge badge-done"><i class="fa-solid fa-flag-checkered me-1"></i>' + esc(t("legend.completed")) + (pts != null ? " (+" + pts + ")" : "") + "</span>";
     if (b === "live") return '<span class="badge wc-badge badge-live"><span class="live-dot"></span>' + esc(t("badge.live")) + "</span>";
@@ -369,6 +379,9 @@
           const ic = p === 4 ? "fa-bullseye" : p === 2 ? "fa-arrows-left-right" : p === 1 ? "fa-check" : "fa-xmark";
           const ex = p === 4 ? esc(t("dash.exactBonus")) + " " : "";
           pick += '<div class="mt-2"><span class="badge wc-badge ' + cls + '"><i class="fa-solid ' + ic + ' me-1"></i>' + ex + esc(t("dash.earned")) + " +" + p + " " + esc(t("pts")) + "</span></div>";
+        } else if (m.badge === "live" && m.liveA != null && m.liveB != null) {
+          const lp = computePts(m.pred.a, m.pred.b, m.liveA, m.liveB);
+          pick += '<div class="mt-2"><span class="badge wc-badge badge-live"><span class="live-dot"></span> ' + esc(t("dash.earned")) + " +" + lp + " " + esc(t("pts")) + " · " + esc(t("badge.live")) + "</span></div>";
         }
       }
       bottom = '<div class="text-center small">' + pick + "</div>" +
@@ -431,14 +444,33 @@
       title.textContent = t("mp.title") + " — " + j.teamA + " vs " + j.teamB;
       if (!j.preds.length) { body.innerHTML = '<div class="text-center text-secondary py-4">' + esc(t("mp.none")) + "</div>"; return; }
       const me = (API.user() || {}).username;
-      let h = '<div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr><th style="width:42px">#</th><th>' + esc(t("lb.player")) +
-        '</th><th class="text-center">' + esc(t("mp.pick")) + "</th>" + (j.completed ? '<th class="text-end">' + esc(t("lb.points")) + "</th>" : "") + "</tr></thead><tbody>";
+
+      // top-3 podium (by points; ties share a rank)
+      const podPlace = (p, pos) => {
+        if (!p) return "";
+        const cls = p.rank === 1 ? "gold" : p.rank === 2 ? "silver" : "bronze";
+        const av = p.avatar
+          ? '<img class="podium-avatar" src="' + esc(p.avatar) + '" alt=""/>'
+          : '<span class="podium-avatar d-inline-flex align-items-center justify-content-center"><i class="fa-solid fa-user text-secondary"></i></span>';
+        return '<div class="podium-place podium-' + pos + '"><div class="podium-ava-wrap">' + av +
+          '<span class="medal medal-' + cls + ' podium-medal">' + p.rank + '</span></div>' +
+          '<div class="podium-name">' + esc(p.username) + '</div>' +
+          '<div class="podium-points">+' + p.pts + " " + esc(t("pts")) + '</div>' +
+          '<div class="podium-bar">' + p.rank + "</div></div>";
+      };
+      const liveTag = j.live ? '<div class="text-center small text-danger fw-bold mb-2"><span class="live-dot"></span> ' + esc(t("badge.live")) + "</div>" : "";
+      const podium = (j.scored && j.podium && j.podium.length)
+        ? '<div class="podium mb-3">' + podPlace(j.podium[1], 2) + podPlace(j.podium[0], 1) + podPlace(j.podium[2], 3) + "</div>"
+        : "";
+
+      let h = liveTag + podium + '<div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr><th style="width:42px">#</th><th>' + esc(t("lb.player")) +
+        '</th><th class="text-center">' + esc(t("mp.pick")) + "</th>" + (j.scored ? '<th class="text-end">' + esc(t("lb.points")) + "</th>" : "") + "</tr></thead><tbody>";
       j.preds.forEach((p, i) => {
         let pts = "";
-        if (j.completed) { const b = p.pts === 4 ? "badge-done" : p.pts > 0 ? "badge-open" : "badge-locked"; pts = '<td class="text-end"><span class="badge wc-badge ' + b + '">' + (p.pts > 0 ? "+" : "") + p.pts + "</span></td>"; }
+        if (j.scored) { const b = p.pts === 4 ? "badge-done" : p.pts > 0 ? "badge-open" : "badge-locked"; pts = '<td class="text-end"><span class="badge wc-badge ' + b + '">' + (p.pts > 0 ? "+" : "") + p.pts + "</span></td>"; }
         const mine = p.username === me;
         const av = p.avatar ? '<img src="' + esc(p.avatar) + '" class="avatar-mini me-2" alt=""/>' : "";
-        h += '<tr class="' + (mine ? "row-me" : "") + '"><td class="text-secondary">' + (i + 1) + '</td><td class="fw-semibold">' + av + esc(p.username) +
+        h += '<tr class="' + (mine ? "row-me" : "") + '"><td class="text-secondary">' + (j.scored ? p.rank : i + 1) + '</td><td class="fw-semibold">' + av + esc(p.username) +
           (mine ? ' <span class="badge wc-userchip ms-1">' + esc(t("lb.you")) + "</span>" : "") + '</td><td class="text-center fw-bold">' + p.a + " - " + p.b + "</td>" + pts + "</tr>";
       });
       body.innerHTML = h + "</tbody></table></div>";
