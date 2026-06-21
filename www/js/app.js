@@ -445,23 +445,39 @@
       if (!j.preds.length) { body.innerHTML = '<div class="text-center text-secondary py-4">' + esc(t("mp.none")) + "</div>"; return; }
       const me = (API.user() || {}).username;
 
-      // top-3 podium (by points; ties share a rank)
-      const podPlace = (p, pos) => {
-        if (!p) return "";
-        const cls = p.rank === 1 ? "gold" : p.rank === 2 ? "silver" : "bronze";
-        const av = p.avatar
-          ? '<img class="podium-avatar" src="' + esc(p.avatar) + '" alt=""/>'
-          : '<span class="podium-avatar d-inline-flex align-items-center justify-content-center"><i class="fa-solid fa-user text-secondary"></i></span>';
-        return '<div class="podium-place podium-' + pos + '"><div class="podium-ava-wrap">' + av +
-          '<span class="medal medal-' + cls + ' podium-medal">' + p.rank + '</span></div>' +
-          '<div class="podium-name">' + esc(p.username) + '</div>' +
-          '<div class="podium-points">+' + p.pts + " " + esc(t("pts")) + '</div>' +
-          '<div class="podium-bar">' + p.rank + "</div></div>";
+      // Group pts-sorted predictions into up to 3 distinct-points places; tied
+      // players share a place and split it (50/50, 33/33/33, …).
+      const buildPodium = (preds) => {
+        const tiers = [];
+        for (let i = 0; i < preds.length; i++) {
+          const p = preds[i];
+          if (p.pts == null) break;
+          const last = tiers[tiers.length - 1];
+          if (last && last.pts === p.pts) { last.members.push(p); continue; }
+          if (tiers.length >= 3) break;
+          tiers.push({ place: tiers.length + 1, pts: p.pts, members: [p] });
+        }
+        if (!tiers.length) return "";
+        const renderPlace = (tier) => {
+          if (!tier) return "";
+          const cls = tier.place === 1 ? "gold" : tier.place === 2 ? "silver" : "bronze";
+          const members = tier.members.map((p) => {
+            const av = p.avatar
+              ? '<img class="podium-avatar" src="' + esc(p.avatar) + '" alt=""/>'
+              : '<span class="podium-avatar d-inline-flex align-items-center justify-content-center"><i class="fa-solid fa-user text-secondary"></i></span>';
+            return '<div class="podium-member"><div class="podium-ava-wrap">' + av +
+              '<span class="medal medal-' + cls + ' podium-medal">' + tier.place + '</span></div>' +
+              '<div class="podium-name">' + esc(p.username) + "</div></div>";
+          }).join("");
+          return '<div class="podium-place podium-' + tier.place + '"><div class="podium-members">' + members + "</div>" +
+            '<div class="podium-points">+' + tier.pts + " " + esc(t("pts")) + "</div>" +
+            '<div class="podium-bar">' + tier.place + "</div></div>";
+        };
+        const byPlace = (n) => tiers.find((tt) => tt.place === n);
+        return '<div class="podium mb-3">' + renderPlace(byPlace(2)) + renderPlace(byPlace(1)) + renderPlace(byPlace(3)) + "</div>";
       };
       const liveTag = j.live ? '<div class="text-center small text-danger fw-bold mb-2"><span class="live-dot"></span> ' + esc(t("badge.live")) + "</div>" : "";
-      const podium = (j.scored && j.podium && j.podium.length)
-        ? '<div class="podium mb-3">' + podPlace(j.podium[1], 2) + podPlace(j.podium[0], 1) + podPlace(j.podium[2], 3) + "</div>"
-        : "";
+      const podium = j.scored ? buildPodium(j.preds) : "";
 
       let h = liveTag + podium + '<div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr><th style="width:42px">#</th><th>' + esc(t("lb.player")) +
         '</th><th class="text-center">' + esc(t("mp.pick")) + "</th>" + (j.scored ? '<th class="text-end">' + esc(t("lb.points")) + "</th>" : "") + "</tr></thead><tbody>";

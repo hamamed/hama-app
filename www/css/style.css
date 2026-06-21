@@ -125,6 +125,13 @@ h1, h2, h3, h4, h5, h6, .fw-bold { color: var(--text); letter-spacing: -0.01em; 
 .podium-1 .podium-bar { height: 74px; background: linear-gradient(#ffd84d, #f3b01c); }
 .podium-2 .podium-bar { height: 54px; background: linear-gradient(#dbe1e8, #b4bdca); }
 .podium-3 .podium-bar { height: 40px; background: linear-gradient(#ecbf95, #c5763a); }
+/* Shared spot: several tied players split one pedestal */
+.podium-members { display: flex; justify-content: center; align-items: flex-end; gap: 6px; flex-wrap: wrap; }
+.podium-member { flex: 1 1 0; min-width: 38px; max-width: 80px; text-align: center; }
+.podium-members .podium-avatar { width: 42px; height: 42px; }
+.podium-1 .podium-members .podium-avatar { width: 50px; height: 50px; }
+.podium-member .podium-medal { width: 20px; height: 20px; font-size: 0.6rem; bottom: -6px; }
+.podium-member .podium-name { font-size: 0.7rem; margin-top: 0.4rem; }
 .admin-tile {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 6px; padding: 12px 6px; min-height: 78px;
