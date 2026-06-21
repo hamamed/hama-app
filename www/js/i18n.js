@@ -47,6 +47,8 @@ window.I18N = (function () {
     "champ.teamsAppear": "Teams appear once fixtures are added.", "champ.noPick": "no pick made",
     "comm.polls": "Polls", "comm.yes": "Yes", "comm.no": "No",
     "comm.youVoted": "You voted:", "comm.votes": "votes", "comm.changeVote": "Change my vote",
+    "comm2.nav": "Community", "comm2.title": "Community", "comm2.placeholder": "Share something with the community…",
+    "comm2.post": "Post", "comm2.empty": "No posts yet. Be the first!", "comm2.comments": "comments", "comm2.addComment": "Add a comment…",
   };
   const fr = {
     appName: "HAMA WC 2026",
@@ -95,6 +97,8 @@ window.I18N = (function () {
     "champ.teamsAppear": "Les équipes apparaîtront une fois les matchs ajoutés.", "champ.noPick": "aucun choix",
     "comm.polls": "Sondages", "comm.yes": "Oui", "comm.no": "Non",
     "comm.youVoted": "Vous avez voté :", "comm.votes": "votes", "comm.changeVote": "Changer mon vote",
+    "comm2.nav": "Communauté", "comm2.title": "Communauté", "comm2.placeholder": "Partagez quelque chose…",
+    "comm2.post": "Publier", "comm2.empty": "Aucune publication. Soyez le premier !", "comm2.comments": "commentaires", "comm2.addComment": "Ajouter un commentaire…",
   };
   const ar = {
     appName: "هاما 2026",
@@ -143,6 +147,8 @@ window.I18N = (function () {
     "champ.teamsAppear": "تظهر الفرق هنا بعد إضافة المباريات.", "champ.noPick": "لم تختر",
     "comm.polls": "استطلاعات", "comm.yes": "نعم", "comm.no": "لا",
     "comm.youVoted": "صوّتت بـ:", "comm.votes": "أصوات", "comm.changeVote": "غيّر تصويتي",
+    "comm2.nav": "المجتمع", "comm2.title": "المجتمع", "comm2.placeholder": "شارك شيئاً مع المجتمع…",
+    "comm2.post": "نشر", "comm2.empty": "لا توجد منشورات بعد. كن أول من ينشر!", "comm2.comments": "تعليقات", "comm2.addComment": "أضف تعليقاً…",
   };
   const dict = { en, fr, ar };
   const LANGS = [{ c: "en", n: "English" }, { c: "fr", n: "Français" }, { c: "ar", n: "العربية" }];

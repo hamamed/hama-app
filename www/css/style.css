@@ -88,6 +88,14 @@ h1, h2, h3, h4, h5, h6, .fw-bold { color: var(--text); letter-spacing: -0.01em; 
 .pre-line { white-space: pre-line; }
 .stat-tile { background: var(--surface-2); border: 1px solid var(--line); }
 
+/* Community (Reddit-style voting) */
+.min-w-0 { min-width: 0; }
+.vote-col { width: 38px; flex: 0 0 38px; }
+.vote-btn { border: none; background: none; color: var(--text-secondary); cursor: pointer; font-size: 1.35rem; line-height: 1; padding: 0; }
+.vote-btn.up.active { color: #ff6a3d; }
+.vote-btn.down.active { color: #6a85ff; }
+.vote-score { font-size: 0.95rem; }
+
 /* Rank medals (top 3) */
 .medal {
   display: inline-flex; align-items: center; justify-content: center;

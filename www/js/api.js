@@ -48,6 +48,12 @@ window.API = (function () {
     community: () => call("/community"),
     vote: (pollId, choice) => call("/vote", { method: "POST", body: { pollId, choice } }),
     me: () => call("/me"),
+    posts: () => call("/community/posts"),
+    addPost: (body) => call("/community/posts", { method: "POST", body: { body } }),
+    votePost: (id, value) => call("/community/posts/" + id + "/vote", { method: "POST", body: { value } }),
+    addPostComment: (id, body) => call("/community/posts/" + id + "/comment", { method: "POST", body: { body } }),
+    delPost: (id) => call("/community/posts/" + id + "/delete", { method: "POST" }),
+    delComment: (id) => call("/community/comments/" + id + "/delete", { method: "POST" }),
     appVersion: () => call("/app-version"),
     admin: {
       overview: () => call("/admin/overview"),

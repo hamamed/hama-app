@@ -3,7 +3,7 @@
   const t = I18N.t;
   const app = () => document.getElementById("app");
   const LOCALE = { en: "en-GB", fr: "fr-FR", ar: "ar" };
-  const APP_VERSION = "1.4.0"; // bump this when you build a new APK
+  const APP_VERSION = "1.5.0"; // bump this when you build a new APK
   let countdownTimer = null, liveTimer = null;
   let appUpdate = { available: false, url: "https://koydam.com/download/hama.apk" };
   let isAdminUser = false;
@@ -84,9 +84,9 @@
       { id: "fixtures", icon: "fa-calendar-days", label: t("nav.fixtures") },
       { id: "groups", icon: "fa-table-cells-large", label: t("nav.groups") },
       { id: "ranks", icon: "fa-trophy", label: t("nav.ranks") },
+      { id: "community", icon: "fa-comments", label: t("comm2.nav") },
       { id: "profile", icon: "fa-user", label: t("nav.profile") },
     ];
-    if (isAdminUser) tabs.push({ id: "admin", icon: "fa-screwdriver-wrench", label: "Admin" });
     app().innerHTML =
       '<nav class="navbar wc-navbar"><div class="container">' +
         '<a class="navbar-brand d-flex align-items-center" href="#"><img class="brand-logo" src="img/logo.png" onerror="this.style.display=\'none\'"/></a>' +
@@ -94,6 +94,7 @@
           '<i class="fa-solid fa-globe me-1"></i>' + I18N.lang().toUpperCase() + "</a>" +
           '<ul class="dropdown-menu dropdown-menu-end">' + langItems + "</ul></div>" +
         '<span class="badge wc-userchip ms-2"><i class="fa-solid fa-user me-1"></i>' + esc(u.username || "") + "</span>" +
+        (isAdminUser ? '<button id="adminBtn" class="btn btn-outline-secondary btn-sm ms-2" title="Admin"><i class="fa-solid fa-screwdriver-wrench"></i></button>' : "") +
         (appUpdate.available ? '<a id="updateBtn" href="#" class="btn btn-accent btn-sm ms-2"><i class="fa-solid fa-circle-arrow-down me-1"></i>' + esc(t("app.update")) + "</a>" : "") +
       "</div></nav>" +
       '<div class="container py-4" id="screen">' + bodyHtml + "</div>" +
@@ -106,6 +107,8 @@
       b.addEventListener("click", (e) => { e.preventDefault(); I18N.setLang(b.dataset.l); applyDir(); go(activeTab); }));
     const ub = document.getElementById("updateBtn");
     if (ub) ub.addEventListener("click", (e) => { e.preventDefault(); openExternal(appUpdate.url); });
+    const ab = document.getElementById("adminBtn");
+    if (ab) ab.addEventListener("click", () => go("admin"));
   }
   function setBody(html) { const s = document.getElementById("screen"); if (s) s.innerHTML = html; }
   function loading() { return '<div class="text-center text-secondary py-5"><i class="fa-solid fa-futbol fa-spin fa-2x"></i></div>'; }
@@ -119,7 +122,7 @@
 
   function go(tab) {
     clearTimers();
-    const map = { fixtures: renderFixtures, groups: renderGroups, ranks: renderRanks, profile: renderProfile, admin: renderAdmin };
+    const map = { fixtures: renderFixtures, groups: renderGroups, ranks: renderRanks, community: renderCommunity, profile: renderProfile, admin: renderAdmin };
     shell(tab, loading());
     (map[tab] || renderFixtures)();
   }
@@ -661,6 +664,86 @@
       }
       body.innerHTML = h;
     }).catch(() => { body.innerHTML = '<div class="text-center text-danger py-4">' + esc(t("netErr")) + "</div>"; });
+  }
+
+  // ---------- COMMUNITY ----------
+  function agoShort(ms) {
+    const s = Math.floor((Date.now() - ms) / 1000);
+    if (s < 60) return s + "s";
+    if (s < 3600) return Math.floor(s / 60) + "m";
+    if (s < 86400) return Math.floor(s / 3600) + "h";
+    return Math.floor(s / 86400) + "d";
+  }
+  async function renderCommunity() {
+    let data; try { data = await API.posts(); } catch { return fail(); }
+    const posts = data.posts || [];
+    const isAdm = data.isAdmin;
+    const head = '<div class="mb-3"><h2 class="fw-bold mb-0"><i class="fa-solid fa-comments text-accent me-2"></i>' + esc(t("comm2.title")) + "</h2></div>";
+    const newBox = '<div class="card wc-card border-0 mb-4"><div class="card-body">' +
+      '<textarea id="npBody" class="form-control mb-2" rows="3" maxlength="2000" dir="auto" placeholder="' + esc(t("comm2.placeholder")) + '"></textarea>' +
+      '<div class="d-grid"><button id="npPost" class="btn btn-accent fw-semibold"><i class="fa-solid fa-paper-plane me-1"></i>' + esc(t("comm2.post")) + "</button></div></div></div>";
+
+    function postCard(p) {
+      const av = p.avatar ? '<img src="' + esc(p.avatar) + '" class="avatar-mini me-1" alt=""/>' : '<i class="fa-solid fa-user-circle me-1"></i>';
+      const del = (p.mine || isAdm) ? '<button class="btn btn-link btn-sm text-danger p-0 ms-1 del-post" data-id="' + p.id + '"><i class="fa-solid fa-trash"></i></button>' : "";
+      const comments = p.comments.map((c) => {
+        const cav = c.avatar ? '<img src="' + esc(c.avatar) + '" class="avatar-mini me-1" alt=""/>' : "";
+        const cdel = (c.mine || isAdm) ? '<button class="btn btn-link btn-sm text-danger p-0 del-comment" data-id="' + c.id + '"><i class="fa-solid fa-trash"></i></button>' : "";
+        return '<div class="d-flex gap-2 py-2 border-top"><div class="flex-grow-1 min-w-0"><div class="small text-secondary">' + cav +
+          '<span class="fw-semibold text-body">' + esc(c.username) + "</span> · " + agoShort(c.createdAt) + '</div><div class="pre-line small" dir="auto">' + esc(c.body) + "</div></div>" + cdel + "</div>";
+      }).join("");
+      return '<div class="card wc-card border-0 mb-3"><div class="card-body d-flex gap-3">' +
+        '<div class="vote-col text-center" data-id="' + p.id + '">' +
+          '<button class="vote-btn up ' + (p.myVote === 1 ? "active" : "") + '" data-value="1"><i class="fa-solid fa-caret-up"></i></button>' +
+          '<div class="vote-score fw-bold">' + p.score + "</div>" +
+          '<button class="vote-btn down ' + (p.myVote === -1 ? "active" : "") + '" data-value="-1"><i class="fa-solid fa-caret-down"></i></button></div>' +
+        '<div class="flex-grow-1 min-w-0">' +
+          '<div class="small text-secondary mb-1">' + av + '<span class="fw-semibold text-body">' + esc(p.username) + "</span> · " + agoShort(p.createdAt) + del + "</div>" +
+          '<div class="pre-line mb-2" dir="auto">' + esc(p.body) + "</div>" +
+          '<button class="btn btn-link btn-sm p-0 text-secondary text-decoration-none toggle-comments" data-id="' + p.id + '"><i class="fa-regular fa-comment me-1"></i>' + p.commentCount + " " + esc(t("comm2.comments")) + "</button>" +
+          '<div class="comments-box d-none mt-2" data-id="' + p.id + '">' + comments +
+            '<div class="d-flex gap-2 mt-2"><input class="form-control form-control-sm cmt-input" maxlength="1000" dir="auto" placeholder="' + esc(t("comm2.addComment")) + '"/><button class="btn btn-accent btn-sm cmt-send" data-id="' + p.id + '"><i class="fa-solid fa-paper-plane"></i></button></div>' +
+          "</div></div></div></div>";
+    }
+
+    setBody(head + newBox + (posts.length ? posts.map(postCard).join("")
+      : '<div class="text-center text-secondary py-5"><i class="fa-solid fa-comment-dots fa-2x mb-3 d-block"></i>' + esc(t("comm2.empty")) + "</div>"));
+
+    document.getElementById("npPost").addEventListener("click", () => {
+      const b = document.getElementById("npBody").value.trim();
+      if (!b) return;
+      API.addPost(b).then(renderCommunity).catch(() => toast(t("netErr"), false));
+    });
+    document.querySelectorAll(".vote-col").forEach((col) => {
+      const id = col.dataset.id, scoreEl = col.querySelector(".vote-score");
+      col.querySelectorAll(".vote-btn").forEach((btn) => btn.addEventListener("click", () => {
+        const wanted = parseInt(btn.dataset.value, 10);
+        const value = btn.classList.contains("active") ? 0 : wanted;
+        API.votePost(id, value).then((j) => {
+          scoreEl.textContent = j.score;
+          col.querySelectorAll(".vote-btn").forEach((b) => b.classList.remove("active"));
+          if (value !== 0) btn.classList.add("active");
+        }).catch(() => {});
+      }));
+    });
+    document.querySelectorAll(".toggle-comments").forEach((b) => b.addEventListener("click", () => {
+      const box = document.querySelector('.comments-box[data-id="' + b.dataset.id + '"]');
+      if (box) box.classList.toggle("d-none");
+    }));
+    document.querySelectorAll(".cmt-send").forEach((b) => b.addEventListener("click", () => {
+      const box = document.querySelector('.comments-box[data-id="' + b.dataset.id + '"]');
+      const v = box.querySelector(".cmt-input").value.trim();
+      if (!v) return;
+      API.addPostComment(b.dataset.id, v).then(renderCommunity).catch(() => toast(t("netErr"), false));
+    }));
+    document.querySelectorAll(".del-post").forEach((b) => b.addEventListener("click", () => {
+      if (!confirm("Delete this post?")) return;
+      API.delPost(b.dataset.id).then(renderCommunity).catch(() => toast(t("netErr"), false));
+    }));
+    document.querySelectorAll(".del-comment").forEach((b) => b.addEventListener("click", () => {
+      if (!confirm("Delete this comment?")) return;
+      API.delComment(b.dataset.id).then(renderCommunity).catch(() => toast(t("netErr"), false));
+    }));
   }
 
   // ---------- PROFILE ----------
