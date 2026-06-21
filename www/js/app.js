@@ -365,9 +365,9 @@
         pick = '<span class="text-secondary">' + esc(t("yourPick")) + ":</span> <span class=\"fw-semibold user-pred\">" + m.pred.a + "-" + m.pred.b + "</span>";
         if (m.badge === "completed") {
           const p = m.pred.pts;
-          const cls = p === 2 ? "badge-done" : p === 1 ? "badge-open" : "badge-locked";
-          const ic = p === 2 ? "fa-bullseye" : p === 1 ? "fa-check" : "fa-xmark";
-          const ex = p === 2 ? esc(t("dash.exactBonus")) + " " : "";
+          const cls = p === 4 ? "badge-done" : p > 0 ? "badge-open" : "badge-locked";
+          const ic = p === 4 ? "fa-bullseye" : p === 2 ? "fa-arrows-left-right" : p === 1 ? "fa-check" : "fa-xmark";
+          const ex = p === 4 ? esc(t("dash.exactBonus")) + " " : "";
           pick += '<div class="mt-2"><span class="badge wc-badge ' + cls + '"><i class="fa-solid ' + ic + ' me-1"></i>' + ex + esc(t("dash.earned")) + " +" + p + " " + esc(t("pts")) + "</span></div>";
         }
       }
@@ -408,7 +408,7 @@
   }
   function howHtml() {
     const items = [["fa-pen", "how.predict"], ["fa-lock", "how.lock"], ["fa-bullseye", "how.exact"],
-      ["fa-check-double", "how.outcome"], ["fa-xmark", "how.wrong"], ["fa-crown", "how.champion"]];
+      ["fa-arrows-left-right", "how.difference"], ["fa-check-double", "how.outcome"], ["fa-xmark", "how.wrong"], ["fa-crown", "how.champion"]];
     return '<div class="card wc-card border-0 mt-4 how-card"><div class="card-body"><h6 class="fw-bold mb-3"><i class="fa-solid fa-circle-info text-accent me-2"></i>' + esc(t("how.title")) + "</h6>" +
       '<div class="row g-2 small">' + items.map((it) => '<div class="col-12 col-md-6"><i class="fa-solid ' + it[0] + ' text-accent me-2"></i>' + esc(t(it[1])) + "</div>").join("") + "</div></div></div>";
   }
@@ -435,7 +435,7 @@
         '</th><th class="text-center">' + esc(t("mp.pick")) + "</th>" + (j.completed ? '<th class="text-end">' + esc(t("lb.points")) + "</th>" : "") + "</tr></thead><tbody>";
       j.preds.forEach((p, i) => {
         let pts = "";
-        if (j.completed) { const b = p.pts === 2 ? "badge-done" : p.pts === 1 ? "badge-open" : "badge-locked"; pts = '<td class="text-end"><span class="badge wc-badge ' + b + '">' + (p.pts > 0 ? "+" : "") + p.pts + "</span></td>"; }
+        if (j.completed) { const b = p.pts === 4 ? "badge-done" : p.pts > 0 ? "badge-open" : "badge-locked"; pts = '<td class="text-end"><span class="badge wc-badge ' + b + '">' + (p.pts > 0 ? "+" : "") + p.pts + "</span></td>"; }
         const mine = p.username === me;
         const av = p.avatar ? '<img src="' + esc(p.avatar) + '" class="avatar-mini me-2" alt=""/>' : "";
         h += '<tr class="' + (mine ? "row-me" : "") + '"><td class="text-secondary">' + (i + 1) + '</td><td class="fw-semibold">' + av + esc(p.username) +
@@ -562,7 +562,8 @@
       let h = '<div class="row g-2 mb-3">' +
         tile(t("stat.totalPoints"), s.totalPoints, "text-accent") +
         tile(t("stat.exact"), s.exact, "text-success") +
-        tile(t("stat.outcomes"), s.outcome, "text-primary") +
+        tile(t("stat.difference"), s.difference, "text-primary") +
+        tile(t("stat.outcomes"), s.outcome, "text-info") +
         tile(t("stat.hitRate"), s.hitRate + "%", "text-accent") +
         tile(t("stat.made"), s.made) +
         tile(t("stat.scored2"), s.scored) +
@@ -578,7 +579,8 @@
           esc(t("hist.result")) + '</th><th class="text-end">' + esc(t("hist.points")) + "</th></tr></thead><tbody>";
         h += d.history.map((x) => {
           let b;
-          if (x.points === 2) b = '<span class="badge wc-badge badge-done">+2</span>';
+          if (x.points === 4) b = '<span class="badge wc-badge badge-done">+4</span>';
+          else if (x.points === 2) b = '<span class="badge wc-badge badge-open">+2</span>';
           else if (x.points === 1) b = '<span class="badge wc-badge badge-open">+1</span>';
           else if (x.points === 0) b = '<span class="badge wc-badge badge-locked">0</span>';
           else b = '<span class="text-secondary">—</span>';
@@ -638,7 +640,8 @@
       (sub ? ' <span class="text-secondary">' + esc(sub) + "</span>" : "") + "</div></div></div></div>";
     html += '<div class="row g-3 mb-4">' +
       stat("fa-star", '<span class="text-accent">' + s.totalPoints + "</span>", t("stat.totalPoints")) +
-      stat("fa-bullseye", '<span class="text-gold">' + s.exact + "</span>", t("stat.exact"), t("stat.pts2")) +
+      stat("fa-bullseye", '<span class="text-gold">' + s.exact + "</span>", t("stat.exact"), t("stat.pts4")) +
+      stat("fa-arrows-left-right", s.difference, t("stat.difference"), t("stat.pts2")) +
       stat("fa-check-double", s.outcome, t("stat.outcomes"), t("stat.pt1")) +
       stat("fa-percent", s.hitRate + "%", t("stat.hitRate"), t("stat.scoredP")) + "</div>";
 
@@ -658,7 +661,7 @@
         '</td><td class="text-secondary small">' + esc(fmtTime(h.kickoff)) + '</td><td class="text-center fw-semibold">' + esc(h.pred) +
         '</td><td class="text-center">' + (h.result ? '<span class="text-gold fw-bold">' + esc(h.result) + "</span>" : '<span class="text-secondary">—</span>') +
         '</td><td class="text-end pe-4">' + (h.points == null ? '<span class="badge wc-badge badge-locked">' + esc(t("badge.locked")) + "</span>" :
-          h.points === 2 ? '<span class="badge wc-badge badge-done">+2</span>' : h.points === 1 ? '<span class="badge wc-badge badge-open">+1</span>' : '<span class="badge wc-badge badge-locked">0</span>') + "</td></tr>").join("") +
+          h.points === 4 ? '<span class="badge wc-badge badge-done">+4</span>' : h.points === 2 ? '<span class="badge wc-badge badge-open">+2</span>' : h.points === 1 ? '<span class="badge wc-badge badge-open">+1</span>' : '<span class="badge wc-badge badge-locked">0</span>') + "</td></tr>").join("") +
       "</tbody></table></div></div>";
 
     setBody(html);
