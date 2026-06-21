@@ -521,8 +521,8 @@
       '<thead><tr><th class="ps-4" style="width:70px">' + esc(t("lb.rank")) + '</th><th style="width:54px" class="text-center"><i class="fa-solid fa-arrows-up-down"></i></th><th>' +
       esc(t("lb.player")) + '</th><th class="text-end pe-4">' + esc(t("lb.points")) + "</th></tr></thead><tbody>";
     users.forEach((u) => {
-      const medal = u.rank === 1 ? '<i class="fa-solid fa-medal text-gold"></i>' : u.rank === 2 ? '<i class="fa-solid fa-medal text-silver"></i>' :
-        u.rank === 3 ? '<i class="fa-solid fa-medal text-bronze"></i>' : '<span class="text-secondary">#' + u.rank + "</span>";
+      const medal = u.rank === 1 ? '<span class="medal medal-gold">1</span>' : u.rank === 2 ? '<span class="medal medal-silver">2</span>' :
+        u.rank === 3 ? '<span class="medal medal-bronze">3</span>' : '<span class="text-secondary">#' + u.rank + "</span>";
       const move = u.move > 0 ? '<span class="text-success"><i class="fa-solid fa-caret-up"></i> ' + u.move + "</span>" :
         u.move < 0 ? '<span class="text-danger"><i class="fa-solid fa-caret-down"></i> ' + -u.move + "</span>" :
         '<span class="text-secondary"><i class="fa-solid fa-minus"></i></span>';
