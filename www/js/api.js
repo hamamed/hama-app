@@ -71,6 +71,7 @@ window.API = (function () {
       userToggleAdmin: (id) => call("/admin/users/admin/" + id, { method: "POST" }),
       userDelete: (id) => call("/admin/users/delete/" + id, { method: "POST" }),
       userPreds: (id) => call("/admin/users/" + id + "/predictions"),
+      userPredDelete: (userId, matchId) => call("/admin/users/" + userId + "/predictions/" + matchId + "/delete", { method: "POST" }),
     },
     setUsername: (username) => call("/username", { method: "POST", body: { username } }),
     setAvatar: (avatar) => call("/avatar", { method: "POST", body: { avatar } }),
