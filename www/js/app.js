@@ -979,8 +979,11 @@
 
     // achievements
     if (d.achievements && d.achievements.length) {
-      html += '<div class="card wc-card border-0 mb-4"><div class="card-body"><h6 class="fw-bold mb-3"><i class="fa-solid fa-trophy text-accent me-2"></i>' + esc(t("ach.title")) + '</h6><div class="d-flex flex-wrap gap-2">' +
-        d.achievements.map((a) => '<span class="ach-badge ' + (a.earned ? "earned" : "") + '"><i class="fa-solid ' + a.icon + ' me-1"></i>' + esc(t("ach." + a.key)) + "</span>").join("") + "</div></div></div>";
+      const badges = d.achievements.map((a) => '<span class="ach-badge ' + (a.earned ? "earned" : "") + '"><i class="fa-solid ' + a.icon + ' me-1"></i>' + esc(t("ach." + a.key)) + "</span>").join("");
+      const legend = d.achievements.map((a) =>
+        '<li class="mb-1"><i class="fa-solid ' + a.icon + ' me-2 ' + (a.earned ? "text-accent" : "") + '" style="width:16px;text-align:center"></i><strong class="text-body">' + esc(t("ach." + a.key)) + "</strong> — " + esc(t("ach." + a.key + "D")) + (a.earned ? ' <i class="fa-solid fa-circle-check text-success"></i>' : "") + "</li>").join("");
+      html += '<div class="card wc-card border-0 mb-4"><div class="card-body"><h6 class="fw-bold mb-3"><i class="fa-solid fa-trophy text-accent me-2"></i>' + esc(t("ach.title")) + '</h6>' +
+        '<div class="d-flex flex-wrap gap-2">' + badges + '</div><ul class="list-unstyled small text-secondary mb-0 mt-3">' + legend + "</ul></div></div>";
     }
 
     // history
