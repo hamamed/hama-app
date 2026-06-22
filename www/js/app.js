@@ -721,6 +721,40 @@
     }).catch(() => { body.innerHTML = '<div class="text-center text-danger py-4">' + esc(t("netErr")) + "</div>"; });
   }
 
+  // ---------- SHARE CARD ----------
+  function buildShareCanvas(d) {
+    const c = document.createElement("canvas"); c.width = 1000; c.height = 560;
+    const x = c.getContext("2d");
+    const g = x.createLinearGradient(0, 0, 1000, 560); g.addColorStop(0, "#1f83ff"); g.addColorStop(1, "#0a6ae0");
+    x.fillStyle = g; x.fillRect(0, 0, 1000, 560);
+    x.fillStyle = "#fff"; x.textAlign = "center";
+    x.font = "bold 42px Nunito, sans-serif"; x.fillText("HAMA · World Cup 2026", 500, 90);
+    x.font = "bold 64px Nunito, sans-serif"; x.fillText(d.name || "", 500, 195);
+    x.font = "900 150px Nunito, sans-serif"; x.fillText("#" + (d.rank || "?"), 500, 350);
+    x.font = "bold 38px Nunito, sans-serif"; x.fillText((d.points || 0) + " pts  ·  " + (d.hit || 0) + "% hit rate", 500, 430);
+    x.font = "26px Nunito, sans-serif"; x.globalAlpha = 0.85; x.fillText("koydam.com", 500, 510);
+    return c;
+  }
+  function shareCard(d) {
+    const canvas = buildShareCanvas(d);
+    canvas.toBlob(function (blob) {
+      const file = new File([blob], "hama-rank.png", { type: "image/png" });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share({ files: [file], title: "My HAMA rank" }).catch(function () { showShareImg(canvas); });
+      } else {
+        showShareImg(canvas);
+      }
+    });
+  }
+  function showShareImg(canvas) {
+    let el = document.getElementById("shareModal");
+    if (!el) { el = document.createElement("div"); el.id = "shareModal"; el.className = "modal fade"; el.tabIndex = -1; document.body.appendChild(el); }
+    el.innerHTML = '<div class="modal-dialog modal-dialog-centered"><div class="modal-content wc-card border-0">' +
+      '<div class="modal-body text-center"><img src="' + canvas.toDataURL("image/png") + '" class="img-fluid rounded mb-2" alt=""/>' +
+      '<p class="small text-secondary mb-0">' + esc(t("profile.shareHint")) + "</p></div></div></div>";
+    bootstrap.Modal.getOrCreateInstance(el).show();
+  }
+
   // ---------- COMMUNITY ----------
   function agoShort(ms) {
     const s = Math.floor((Date.now() - ms) / 1000);
@@ -882,6 +916,7 @@
         '<button id="changePhoto" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-flag me-1"></i>' + esc(t("profile.changePhoto")) + "</button>" +
         '<button id="changeName" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-pen me-1"></i>' + esc(t("profile.changeName")) + "</button>" +
         '<button id="themeBtn" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-circle-half-stroke me-1"></i>' + esc(t("profile.theme")) + "</button>" +
+        '<button id="shareBtn" class="btn btn-accent btn-sm"><i class="fa-solid fa-share-nodes me-1"></i>' + esc(t("profile.share")) + "</button>" +
         '<button id="logout" class="btn btn-outline-danger btn-sm"><i class="fa-solid fa-right-from-bracket me-1"></i>' + esc(t("profile.logout")) + "</button>" +
       "</div></div>";
 
@@ -951,6 +986,7 @@
     document.getElementById("logout").addEventListener("click", (e) => { e.preventDefault(); API.logout(); renderLogin(); });
     document.getElementById("changePhoto").addEventListener("click", () => openFlagPicker(d.flags || []));
     document.getElementById("themeBtn").addEventListener("click", toggleTheme);
+    document.getElementById("shareBtn").addEventListener("click", () => shareCard({ name: d.username, rank: d.rank, points: s.totalPoints, hit: s.hitRate }));
     document.getElementById("changeName").addEventListener("click", () => openNameEditor(d.username));
     document.querySelectorAll("[data-l]").forEach((b) => b.addEventListener("click", () => { I18N.setLang(b.dataset.l); applyDir(); go("profile"); }));
     const cf = document.getElementById("cf");
