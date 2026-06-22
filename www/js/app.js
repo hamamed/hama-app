@@ -713,18 +713,26 @@
     if (s < 86400) return Math.floor(s / 3600) + "h";
     return Math.floor(s / 86400) + "d";
   }
+  let communitySort = "top";
   async function renderCommunity() {
-    let data; try { data = await API.posts(); } catch { return fail(); }
+    let data; try { data = await API.posts(communitySort); } catch { return fail(); }
     const posts = data.posts || [];
     const isAdm = data.isAdmin;
-    const head = '<div class="mb-3"><h2 class="fw-bold mb-0"><i class="fa-solid fa-comments text-accent me-2"></i>' + esc(t("comm2.title")) + "</h2></div>";
+    const head = '<div class="mb-3"><h2 class="fw-bold mb-0"><i class="fa-solid fa-comments text-accent me-2"></i>' + esc(t("comm2.title")) + "</h2></div>" +
+      '<div class="btn-group btn-group-sm mb-3"><button class="btn ' + (communitySort === "top" ? "btn-accent" : "btn-outline-secondary") + ' sort-top"><i class="fa-solid fa-fire me-1"></i>' + esc(t("comm2.top")) + "</button>" +
+      '<button class="btn ' + (communitySort === "new" ? "btn-accent" : "btn-outline-secondary") + ' sort-new"><i class="fa-solid fa-clock me-1"></i>' + esc(t("comm2.new")) + "</button></div>";
     const newBox = '<div class="card wc-card border-0 mb-4"><div class="card-body">' +
       '<textarea id="npBody" class="form-control mb-2" rows="3" maxlength="2000" dir="auto" placeholder="' + esc(t("comm2.placeholder")) + '"></textarea>' +
       '<div class="d-grid"><button id="npPost" class="btn btn-accent fw-semibold"><i class="fa-solid fa-paper-plane me-1"></i>' + esc(t("comm2.post")) + "</button></div></div></div>";
 
     function postCard(p) {
       const av = p.avatar ? '<img src="' + esc(p.avatar) + '" class="avatar-mini me-1" alt=""/>' : '<i class="fa-solid fa-user-circle me-1"></i>';
-      const del = (p.mine || isAdm) ? '<button class="btn btn-link btn-sm text-danger p-0 ms-1 del-post" data-id="' + p.id + '"><i class="fa-solid fa-trash"></i></button>' : "";
+      const canEdit = p.mine || isAdm;
+      const editBtn = canEdit ? '<button class="btn btn-link btn-sm text-secondary p-0 ms-1 edit-post" data-id="' + p.id + '"><i class="fa-solid fa-pen"></i></button>' : "";
+      const del = canEdit ? '<button class="btn btn-link btn-sm text-danger p-0 ms-1 del-post" data-id="' + p.id + '"><i class="fa-solid fa-trash"></i></button>' : "";
+      const report = !p.mine ? '<button class="btn btn-link btn-sm text-secondary p-0 ms-1 report-post" data-id="' + p.id + '"' + (p.myReport ? " disabled" : "") + '><i class="fa-solid fa-flag"></i>' + (p.myReport ? " " + esc(t("comm2.reported")) : "") + "</button>" : "";
+      const flagged = (isAdm && p.reportCount > 0) ? ' <span class="badge rounded-pill text-bg-warning"><i class="fa-solid fa-flag me-1"></i>' + p.reportCount + "</span>" : "";
+      const editForm = canEdit ? '<div class="d-none mt-2" data-editpost="' + p.id + '"><textarea class="form-control mb-1 ep-body" rows="3" maxlength="2000" dir="auto">' + esc(p.body) + '</textarea><button class="btn btn-accent btn-sm ep-save" data-id="' + p.id + '">' + esc(t("comm2.save")) + "</button></div>" : "";
       const comments = p.comments.map((c) => {
         const cav = c.avatar ? '<img src="' + esc(c.avatar) + '" class="avatar-mini me-1" alt=""/>' : "";
         const cdel = (c.mine || isAdm) ? '<button class="btn btn-link btn-sm text-danger p-0 del-comment" data-id="' + c.id + '"><i class="fa-solid fa-trash"></i></button>' : "";
@@ -740,8 +748,8 @@
           '<div class="vote-score fw-bold">' + p.score + "</div>" +
           '<button class="vote-btn down ' + (p.myVote === -1 ? "active" : "") + '" data-value="-1"><i class="fa-solid fa-caret-down"></i></button></div>' +
         '<div class="flex-grow-1 min-w-0">' +
-          '<div class="small text-secondary mb-1">' + av + '<span class="fw-semibold text-body">' + esc(p.username) + "</span> · " + agoShort(p.createdAt) + newPill + del + "</div>" +
-          '<div class="pre-line mb-2" dir="auto">' + esc(p.body) + "</div>" +
+          '<div class="small text-secondary mb-1">' + av + '<span class="fw-semibold text-body">' + esc(p.username) + "</span> · " + agoShort(p.createdAt) + newPill + flagged + editBtn + del + report + "</div>" +
+          '<div class="pre-line mb-2" dir="auto">' + esc(p.body) + "</div>" + editForm +
           '<button class="btn btn-link btn-sm p-0 text-secondary text-decoration-none toggle-comments" data-id="' + p.id + '"><i class="fa-regular fa-comment me-1"></i>' + p.commentCount + " " + esc(t("comm2.comments")) + "</button>" +
           '<div class="comments-box d-none mt-2" data-id="' + p.id + '">' + comments +
             '<div class="d-flex gap-2 mt-2"><input class="form-control form-control-sm cmt-input" maxlength="1000" dir="auto" placeholder="' + esc(t("comm2.addComment")) + '"/><button class="btn btn-accent btn-sm cmt-send" data-id="' + p.id + '"><i class="fa-solid fa-paper-plane"></i></button></div>' +
@@ -785,6 +793,23 @@
     document.querySelectorAll(".del-comment").forEach((b) => b.addEventListener("click", () => {
       if (!confirm("Delete this comment?")) return;
       API.delComment(b.dataset.id).then(renderCommunity).catch(() => toast(t("netErr"), false));
+    }));
+    document.querySelector(".sort-top").addEventListener("click", () => { communitySort = "top"; renderCommunity(); });
+    document.querySelector(".sort-new").addEventListener("click", () => { communitySort = "new"; renderCommunity(); });
+    document.querySelectorAll(".edit-post").forEach((b) => b.addEventListener("click", () => {
+      const box = document.querySelector('[data-editpost="' + b.dataset.id + '"]'); if (box) box.classList.toggle("d-none");
+    }));
+    document.querySelectorAll(".ep-save").forEach((b) => b.addEventListener("click", () => {
+      const box = document.querySelector('[data-editpost="' + b.dataset.id + '"]');
+      const v = box.querySelector(".ep-body").value.trim();
+      if (!v) return;
+      API.editPost(b.dataset.id, v).then(renderCommunity).catch(() => toast(t("netErr"), false));
+    }));
+    document.querySelectorAll(".report-post").forEach((b) => b.addEventListener("click", () => {
+      if (b.disabled) return;
+      if (!confirm("Report this post to the admins?")) return;
+      b.disabled = true;
+      API.reportPost(b.dataset.id).then(() => { b.innerHTML = '<i class="fa-solid fa-flag"></i> ' + esc(t("comm2.reported")); }).catch(() => { b.disabled = false; toast(t("netErr"), false); });
     }));
 
     // Opening the feed marks it seen — clear the nav badge.
