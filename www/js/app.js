@@ -718,6 +718,7 @@
     let data; try { data = await API.posts(communitySort); } catch { return fail(); }
     const posts = data.posts || [];
     const isAdm = data.isAdmin;
+    const reactionSet = data.reactionSet || ["👍", "❤️", "😂", "🔥", "😮"];
     const head = '<div class="mb-3"><h2 class="fw-bold mb-0"><i class="fa-solid fa-comments text-accent me-2"></i>' + esc(t("comm2.title")) + "</h2></div>" +
       '<div class="btn-group btn-group-sm mb-3"><button class="btn ' + (communitySort === "top" ? "btn-accent" : "btn-outline-secondary") + ' sort-top"><i class="fa-solid fa-fire me-1"></i>' + esc(t("comm2.top")) + "</button>" +
       '<button class="btn ' + (communitySort === "new" ? "btn-accent" : "btn-outline-secondary") + ' sort-new"><i class="fa-solid fa-clock me-1"></i>' + esc(t("comm2.new")) + "</button></div>";
@@ -733,12 +734,25 @@
       const report = !p.mine ? '<button class="btn btn-link btn-sm text-secondary p-0 ms-1 report-post" data-id="' + p.id + '"' + (p.myReport ? " disabled" : "") + '><i class="fa-solid fa-flag"></i>' + (p.myReport ? " " + esc(t("comm2.reported")) : "") + "</button>" : "";
       const flagged = (isAdm && p.reportCount > 0) ? ' <span class="badge rounded-pill text-bg-warning"><i class="fa-solid fa-flag me-1"></i>' + p.reportCount + "</span>" : "";
       const editForm = canEdit ? '<div class="d-none mt-2" data-editpost="' + p.id + '"><textarea class="form-control mb-1 ep-body" rows="3" maxlength="2000" dir="auto">' + esc(p.body) + '</textarea><button class="btn btn-accent btn-sm ep-save" data-id="' + p.id + '">' + esc(t("comm2.save")) + "</button></div>" : "";
-      const comments = p.comments.map((c) => {
+      const replies = {};
+      p.comments.forEach((c) => { if (c.parentId) { (replies[c.parentId] = replies[c.parentId] || []).push(c); } });
+      const cRow = (c, isReply) => {
         const cav = c.avatar ? '<img src="' + esc(c.avatar) + '" class="avatar-mini me-1" alt=""/>' : "";
         const cdel = (c.mine || isAdm) ? '<button class="btn btn-link btn-sm text-danger p-0 del-comment" data-id="' + c.id + '"><i class="fa-solid fa-trash"></i></button>' : "";
-        return '<div class="d-flex gap-2 py-2 border-top ' + (c.isNew ? "comment-new" : "") + '"><div class="flex-grow-1 min-w-0"><div class="small text-secondary">' + cav +
-          '<span class="fw-semibold text-body">' + esc(c.username) + "</span> · " + agoShort(c.createdAt) + '</div><div class="pre-line small" dir="auto">' + esc(c.body) + "</div></div>" + cdel + "</div>";
-      }).join("");
+        const replyUi = !isReply
+          ? '<button class="btn btn-link btn-sm p-0 text-secondary text-decoration-none reply-toggle" data-id="' + c.id + '"><i class="fa-solid fa-reply me-1"></i>' + esc(t("comm2.reply")) + "</button>" +
+            '<div class="d-none mt-1 d-flex gap-2" data-reply="' + c.id + '"><input class="form-control form-control-sm rep-input" maxlength="1000" dir="auto" placeholder="' + esc(t("comm2.addComment")) + '"/><button class="btn btn-accent btn-sm rep-send" data-post="' + p.id + '" data-parent="' + c.id + '"><i class="fa-solid fa-paper-plane"></i></button></div>'
+          : "";
+        return '<div class="d-flex gap-2 py-2 border-top ' + (c.isNew ? "comment-new" : "") + (isReply ? " ms-4" : "") + '"><div class="flex-grow-1 min-w-0"><div class="small text-secondary">' + cav +
+          '<span class="fw-semibold text-body">' + esc(c.username) + "</span> · " + agoShort(c.createdAt) + '</div><div class="pre-line small" dir="auto">' + esc(c.body) + "</div>" + replyUi + "</div>" + cdel + "</div>";
+      };
+      const comments = p.comments.filter((c) => !c.parentId)
+        .map((c) => cRow(c, false) + (replies[c.id] || []).map((r) => cRow(r, true)).join("")).join("");
+      const reactBar = '<div class="reaction-bar mb-2" data-id="' + p.id + '">' + reactionSet.map((em) => {
+        const r = (p.reactions || []).find((x) => x.emoji === em);
+        const c = r ? r.count : 0, mine = r && r.mine;
+        return '<button class="reaction-btn ' + (mine ? "active" : "") + '" data-emoji="' + em + '">' + em + '<span class="rc">' + (c > 0 ? c : "") + "</span></button>";
+      }).join("") + "</div>";
       const newPill = p.isNew ? ' <span class="badge rounded-pill text-bg-danger">' + esc(t("comm2.new")) + "</span>"
         : (p.hasNewComments ? ' <span class="badge rounded-pill text-bg-primary"><i class="fa-solid fa-comment-dots me-1"></i>' + esc(t("comm2.new")) + "</span>" : "");
       const cardCls = p.isNew ? " post-new" : (p.hasNewComments ? " post-newc" : "");
@@ -749,7 +763,7 @@
           '<button class="vote-btn down ' + (p.myVote === -1 ? "active" : "") + '" data-value="-1"><i class="fa-solid fa-caret-down"></i></button></div>' +
         '<div class="flex-grow-1 min-w-0">' +
           '<div class="small text-secondary mb-1">' + av + '<span class="fw-semibold text-body">' + esc(p.username) + "</span> · " + agoShort(p.createdAt) + newPill + flagged + editBtn + del + report + "</div>" +
-          '<div class="pre-line mb-2" dir="auto">' + esc(p.body) + "</div>" + editForm +
+          '<div class="pre-line mb-2" dir="auto">' + esc(p.body) + "</div>" + editForm + reactBar +
           '<button class="btn btn-link btn-sm p-0 text-secondary text-decoration-none toggle-comments" data-id="' + p.id + '"><i class="fa-regular fa-comment me-1"></i>' + p.commentCount + " " + esc(t("comm2.comments")) + "</button>" +
           '<div class="comments-box d-none mt-2" data-id="' + p.id + '">' + comments +
             '<div class="d-flex gap-2 mt-2"><input class="form-control form-control-sm cmt-input" maxlength="1000" dir="auto" placeholder="' + esc(t("comm2.addComment")) + '"/><button class="btn btn-accent btn-sm cmt-send" data-id="' + p.id + '"><i class="fa-solid fa-paper-plane"></i></button></div>' +
@@ -794,6 +808,28 @@
       if (!confirm("Delete this comment?")) return;
       API.delComment(b.dataset.id).then(renderCommunity).catch(() => toast(t("netErr"), false));
     }));
+    document.querySelectorAll(".reply-toggle").forEach((b) => b.addEventListener("click", () => {
+      const box = document.querySelector('[data-reply="' + b.dataset.id + '"]'); if (box) box.classList.toggle("d-none");
+    }));
+    document.querySelectorAll(".rep-send").forEach((b) => b.addEventListener("click", () => {
+      const box = document.querySelector('[data-reply="' + b.dataset.parent + '"]');
+      const v = box.querySelector(".rep-input").value.trim();
+      if (!v) return;
+      API.addPostComment(b.dataset.post, v, b.dataset.parent).then(renderCommunity).catch(() => toast(t("netErr"), false));
+    }));
+    document.querySelectorAll(".reaction-bar").forEach((bar) => {
+      const id = bar.dataset.id;
+      bar.querySelectorAll(".reaction-btn").forEach((btn) => btn.addEventListener("click", () => {
+        API.reactPost(id, btn.dataset.emoji).then((j) => {
+          if (!j.ok) return;
+          bar.querySelectorAll(".reaction-btn").forEach((b2) => {
+            const r = j.reactions.find((x) => x.emoji === b2.dataset.emoji);
+            b2.classList.toggle("active", !!(r && r.mine));
+            b2.querySelector(".rc").textContent = r && r.count > 0 ? r.count : "";
+          });
+        }).catch(() => {});
+      }));
+    });
     document.querySelector(".sort-top").addEventListener("click", () => { communitySort = "top"; renderCommunity(); });
     document.querySelector(".sort-new").addEventListener("click", () => { communitySort = "new"; renderCommunity(); });
     document.querySelectorAll(".edit-post").forEach((b) => b.addEventListener("click", () => {
