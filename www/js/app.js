@@ -8,9 +8,10 @@
   let appUpdate = { available: false, url: "https://koydam.com/download/hama.apk" };
   let isAdminUser = false;
   let communityNew = 0;
+  let fixturesTodo = 0;
 
   async function checkAdmin() {
-    try { const r = await API.me(); isAdminUser = !!r.isAdmin; communityNew = r.communityNew || 0; }
+    try { const r = await API.me(); isAdminUser = !!r.isAdmin; communityNew = r.communityNew || 0; fixturesTodo = r.fixturesTodo || 0; }
     catch (e) { isAdminUser = false; }
   }
 
@@ -115,6 +116,7 @@
         '<button class="bottom-nav-item position-relative ' + (x.id === activeTab ? "active" : "") + '" data-tab="' + x.id + '">' +
         '<i class="fa-solid ' + x.icon + '"></i><span>' + esc(x.label) + "</span>" +
         (x.id === "community" && communityNew > 0 ? '<span class="badge rounded-pill text-bg-danger nav-badge">' + (communityNew > 99 ? "99+" : communityNew) + "</span>" : "") +
+        (x.id === "fixtures" && fixturesTodo > 0 ? '<span class="badge rounded-pill text-bg-warning nav-badge">' + (fixturesTodo > 99 ? "99+" : fixturesTodo) + "</span>" : "") +
         "</button>").join("") + "</nav>";
 
     app().querySelectorAll(".bottom-nav-item").forEach((b) => b.addEventListener("click", () => go(b.dataset.tab)));
@@ -124,6 +126,20 @@
     if (ub) ub.addEventListener("click", (e) => { e.preventDefault(); openExternal(appUpdate.url); });
     const ab = document.getElementById("adminBtn");
     if (ab) ab.addEventListener("click", () => go("admin"));
+  }
+  function setNavBadge(tab, n, cls) {
+    const btn = document.querySelector('.bottom-nav-item[data-tab="' + tab + '"]');
+    if (!btn) return;
+    let b = btn.querySelector(".nav-badge");
+    if (n > 0) {
+      if (!b) { b = document.createElement("span"); btn.appendChild(b); }
+      b.className = "badge rounded-pill " + cls + " nav-badge";
+      b.textContent = n > 99 ? "99+" : n;
+    } else if (b) { b.remove(); }
+  }
+  function refreshNavBadges() {
+    setNavBadge("fixtures", fixturesTodo, "text-bg-warning");
+    setNavBadge("community", communityNew, "text-bg-danger");
   }
   function setBody(html) { const s = document.getElementById("screen"); if (s) s.innerHTML = html; }
   function loading() { return '<div class="text-center text-secondary py-5"><i class="fa-solid fa-futbol fa-spin fa-2x"></i></div>'; }
@@ -135,8 +151,10 @@
   }
   function fail() { setBody('<div class="text-center text-secondary py-5"><i class="fa-solid fa-triangle-exclamation fa-2x mb-2 d-block"></i>' + esc(t("netErr")) + "</div>"); }
 
+  let currentTab = "fixtures";
   function go(tab) {
     clearTimers();
+    currentTab = tab;
     const map = { fixtures: renderFixtures, groups: renderGroups, ranks: renderRanks, community: renderCommunity, profile: renderProfile, admin: renderAdmin };
     shell(tab, loading());
     (map[tab] || renderFixtures)();
@@ -428,6 +446,7 @@
           await API.predict(form.dataset.id, a, b);
           btn.innerHTML = '<i class="fa-solid fa-check me-1"></i>' + t("saved");
           btn.classList.add("btn-saved"); toast(t("saved"), true);
+          API.me().then((r) => { fixturesTodo = r.fixturesTodo || 0; communityNew = r.communityNew || 0; refreshNavBadges(); }).catch(() => {});
           setTimeout(() => { btn.innerHTML = '<i class="fa-solid fa-floppy-disk me-1"></i>' + t("update"); btn.classList.remove("btn-saved"); btn.disabled = false; }, 1400);
         } catch (err) {
           toast(err.status === 403 ? t("locked") : err.status === 400 ? t("invalid") : t("netErr"), false);
@@ -622,6 +641,11 @@
     setBody(html + "</tbody></table></div></div>");
     document.querySelectorAll(".user-row, .podium-place").forEach((r) =>
       r.addEventListener("click", () => openUserProfile(r.dataset.id)));
+
+    // Auto-refresh while live points are in play.
+    if (users.some((u) => u.livePts > 0)) {
+      liveTimer = setInterval(() => { if (currentTab === "ranks") renderRanks(); }, 45000);
+    }
   }
 
   function openUserProfile(id) {
