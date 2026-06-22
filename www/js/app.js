@@ -46,6 +46,17 @@
     document.documentElement.dir = I18N.isRTL() ? "rtl" : "ltr";
     document.documentElement.lang = I18N.lang();
   }
+  function applyTheme() {
+    let t = "light";
+    try { t = localStorage.getItem("theme") || "light"; } catch (e) {}
+    document.documentElement.setAttribute("data-bs-theme", t);
+  }
+  function toggleTheme() {
+    const dark = document.documentElement.getAttribute("data-bs-theme") === "dark";
+    const next = dark ? "light" : "dark";
+    document.documentElement.setAttribute("data-bs-theme", next);
+    try { localStorage.setItem("theme", next); } catch (e) {}
+  }
   function toast(msg, ok) {
     let box = document.getElementById("toastBox");
     if (!box) { box = document.createElement("div"); box.id = "toastBox"; box.className = "toast-box"; document.body.appendChild(box); }
@@ -769,6 +780,7 @@
       '<div class="d-flex gap-2 flex-wrap">' +
         '<button id="changePhoto" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-flag me-1"></i>' + esc(t("profile.changePhoto")) + "</button>" +
         '<button id="changeName" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-pen me-1"></i>' + esc(t("profile.changeName")) + "</button>" +
+        '<button id="themeBtn" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-circle-half-stroke me-1"></i>' + esc(t("profile.theme")) + "</button>" +
         '<button id="logout" class="btn btn-outline-danger btn-sm"><i class="fa-solid fa-right-from-bracket me-1"></i>' + esc(t("profile.logout")) + "</button>" +
       "</div></div>";
 
@@ -831,6 +843,7 @@
 
     document.getElementById("logout").addEventListener("click", (e) => { e.preventDefault(); API.logout(); renderLogin(); });
     document.getElementById("changePhoto").addEventListener("click", () => openFlagPicker(d.flags || []));
+    document.getElementById("themeBtn").addEventListener("click", toggleTheme);
     document.getElementById("changeName").addEventListener("click", () => openNameEditor(d.username));
     document.querySelectorAll("[data-l]").forEach((b) => b.addEventListener("click", () => { I18N.setLang(b.dataset.l); applyDir(); go("profile"); }));
     const cf = document.getElementById("cf");
@@ -1113,6 +1126,7 @@
   function start() {
     if (started) return; started = true;
     applyDir();
+    applyTheme();
     checkUpdate();
     if (API.token()) checkAdmin().then(() => go("fixtures")); else renderLogin();
   }
