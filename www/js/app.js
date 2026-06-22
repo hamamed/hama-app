@@ -634,7 +634,7 @@
         '<div class="podium-points">' + u.totalPoints + " " + esc(t("pts")) + liveTag + "</div>" +
         '<div class="podium-bar">' + rank + "</div></div>";
     };
-    const podium = '<div class="card wc-card border-0 mb-4"><div class="card-body"><div class="podium mb-0">' +
+    const podium = '<div class="card wc-card border-0 mb-4 podium-card"><div class="card-body"><div class="podium mb-0">' +
       podPlace(users[1], 2) + podPlace(users[0], 1) + podPlace(users[2], 3) + "</div></div></div>";
 
     let html = head + podium + '<div class="card wc-card border-0"><div class="table-responsive"><table class="table table-hover align-middle mb-0">' +
