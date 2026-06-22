@@ -694,6 +694,9 @@
         tile(t("stat.pending"), s.pending) +
         tile(t("stat.missed"), s.missed, "text-danger") +
         "</div>";
+      if (d.achievements && d.achievements.length) {
+        h += '<div class="d-flex flex-wrap gap-2 mb-3">' + d.achievements.map((a) => '<span class="ach-badge ' + (a.earned ? "earned" : "") + '"><i class="fa-solid ' + a.icon + ' me-1"></i>' + esc(t("ach." + a.key)) + "</span>").join("") + "</div>";
+      }
       h += '<h6 class="fw-bold mb-2"><i class="fa-solid fa-clock-rotate-left text-accent me-2"></i>' + esc(t("hist.title")) + "</h6>";
       if (!d.history.length) {
         h += '<div class="text-center text-secondary py-3">' + esc(t("hist.none")) + "</div>";
@@ -924,6 +927,12 @@
       '<span class="badge wc-badge badge-done"><i class="fa-solid fa-flag-checkered me-1"></i>' + s.scored + " " + esc(t("stat.scored2")) + "</span>" +
       '<span class="badge wc-badge badge-locked"><i class="fa-solid fa-hourglass-half me-1"></i>' + s.pending + " " + esc(t("stat.pending")) + "</span>" +
       '<span class="badge wc-badge badge-locked"><i class="fa-solid fa-xmark me-1"></i>' + s.missed + " " + esc(t("stat.missed")) + "</span></div>";
+
+    // achievements
+    if (d.achievements && d.achievements.length) {
+      html += '<div class="card wc-card border-0 mb-4"><div class="card-body"><h6 class="fw-bold mb-3"><i class="fa-solid fa-trophy text-accent me-2"></i>' + esc(t("ach.title")) + '</h6><div class="d-flex flex-wrap gap-2">' +
+        d.achievements.map((a) => '<span class="ach-badge ' + (a.earned ? "earned" : "") + '"><i class="fa-solid ' + a.icon + ' me-1"></i>' + esc(t("ach." + a.key)) + "</span>").join("") + "</div></div></div>";
+    }
 
     // history
     html += '<h5 class="fw-semibold mb-3"><i class="fa-solid fa-clock-rotate-left text-accent me-2"></i>' + esc(t("hist.title")) + "</h5>";
