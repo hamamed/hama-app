@@ -48,6 +48,7 @@ window.API = (function () {
     community: () => call("/community"),
     vote: (pollId, choice) => call("/vote", { method: "POST", body: { pollId, choice } }),
     me: () => call("/me"),
+    pushRegister: (token, platform) => call("/push/register", { method: "POST", body: { token, platform } }),
     posts: (sort) => call("/community/posts" + (sort ? "?sort=" + sort : "")),
     addPost: (body) => call("/community/posts", { method: "POST", body: { body } }),
     editPost: (id, body) => call("/community/posts/" + id + "/edit", { method: "POST", body: { body } }),

@@ -15,6 +15,20 @@
     catch (e) { isAdminUser = false; }
   }
 
+  // Register for push notifications — only if the cordova-plugin-push is installed.
+  // (No-op in the browser / until the plugin + Firebase config are added and a new APK is built.)
+  function registerPush() {
+    try {
+      if (!window.PushNotification || !API.token()) return;
+      const p = window.PushNotification.init({ android: {}, ios: {}, browser: {} });
+      p.on("registration", function (data) {
+        if (data && data.registrationId) API.pushRegister(data.registrationId, "android").catch(function () {});
+      });
+      p.on("notification", function () { /* foreground notification — could refresh badges */ });
+      p.on("error", function () {});
+    } catch (e) { /* ignore */ }
+  }
+
   function openExternal(url) {
     if (window.cordova && window.cordova.InAppBrowser) window.cordova.InAppBrowser.open(url, "_system");
     else window.open(url, "_system");
@@ -1271,6 +1285,7 @@
     applyDir();
     applyTheme();
     checkUpdate();
+    registerPush();
     if (API.token()) checkAdmin().then(() => go("fixtures")); else renderLogin();
   }
   document.addEventListener("deviceready", start, false);
