@@ -34,6 +34,7 @@
 [data-bs-theme="dark"] .wc-card { background: var(--surface); }
 
 /* Smaller base size = everything (rem-based) scales down for a tighter mobile fit */
+.bg-accent { background: var(--accent) !important; }
 html { font-size: 13.5px; }
 body { overflow-x: hidden; }
 .container { padding-left: 12px; padding-right: 12px; max-width: 100%; }

@@ -638,7 +638,20 @@
         "</td><td>" + av + '<span class="fw-semibold">' + esc(u.username) + "</span>" +
         (u.me ? ' <span class="badge wc-userchip ms-2">' + esc(t("lb.you")) + "</span>" : "") + '</td><td class="text-end pe-4 fw-bold text-accent">' + u.totalPoints + gained + "</td></tr>";
     });
-    setBody(html + "</tbody></table></div></div>");
+    html += "</tbody></table></div></div>";
+
+    // Champion race widget
+    const race = data.championRace;
+    if (race && race.total > 0) {
+      html += '<div class="card wc-card border-0 mt-4"><div class="card-body"><h6 class="fw-bold mb-3"><i class="fa-solid fa-crown text-accent me-2"></i>' + esc(t("champ.race")) + "</h6>" +
+        race.rows.map((r) => {
+          const pct = Math.round(r.n / race.total * 100);
+          const flag = r.flag ? '<img src="' + esc(r.flag) + '" class="flag-mini me-1" alt=""/>' : "";
+          return '<div class="mb-2"><div class="d-flex justify-content-between small mb-1"><span>' + flag + esc(r.team) + '</span><span class="text-secondary">' + r.n + " · " + pct + '%</span></div><div class="progress" style="height:8px;"><div class="progress-bar bg-accent" style="width:' + pct + '%"></div></div></div>';
+        }).join("") + "</div></div>";
+    }
+
+    setBody(html);
     document.querySelectorAll(".user-row, .podium-place").forEach((r) =>
       r.addEventListener("click", () => openUserProfile(r.dataset.id)));
 
