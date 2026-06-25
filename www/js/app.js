@@ -596,7 +596,7 @@
     };
     let h = b.provisional ? '<p class="text-secondary small mb-3"><i class="fa-solid fa-circle-info me-1"></i>' + esc(t("ko.provisional")) + "</p>" : "";
     rounds.forEach((rd) => {
-      h += '<div class="ko-round"><div class="ko-round-head"><h6 class="fw-bold mb-0">' + esc(rd.name) + "</h6></div><div class="ko-grid">";
+      h += '<div class="ko-round"><div class="ko-round-head"><h6 class="fw-bold mb-0">' + esc(rd.name) + '</h6></div><div class="ko-grid">';
       rd.matches.forEach((m) => {
         h += '<div class="ko-match"><div class="ko-num">Match ' + m.n + "</div>" +
           team(m.teamA || m.labelA, m.flagA, m.scoreA, m.winA) +
