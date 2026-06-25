@@ -585,13 +585,14 @@
 
   // ---------- GROUPS ----------
   function bracketHtml(b) {
-    if (!b || !b.rounds || !b.rounds.some((r) => r.matches.length)) {
+    const cols = b && b.columns;
+    if (!cols || !cols.some((c) => c.matches.length)) {
       return '<div class="card wc-card border-0"><div class="card-body text-center text-secondary py-5"><i class="fa-solid fa-sitemap fa-2x mb-3 d-block"></i>' + esc(t("ko.empty")) + "</div></div>";
     }
     let h = b.provisional ? '<p class="text-secondary small mb-3"><i class="fa-solid fa-circle-info me-1"></i>' + esc(t("ko.provisional")) + "</p>" : "";
     h += '<div class="bracket">';
-    b.rounds.forEach((rd) => {
-      h += '<div class="bracket-col"><div class="bracket-round">' + esc(rd.name) + "</div>";
+    cols.forEach((rd) => {
+      h += '<div class="bracket-col"><div class="bracket-round">' + esc(rd.title) + "</div>";
       rd.matches.forEach((m) => {
         const fa = m.flagA ? '<img src="' + esc(m.flagA) + '" class="flag-mini me-1"/>' : "";
         const fb = m.flagB ? '<img src="' + esc(m.flagB) + '" class="flag-mini me-1"/>' : "";
