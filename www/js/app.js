@@ -595,8 +595,8 @@
       rd.matches.forEach((m) => {
         const fa = m.flagA ? '<img src="' + esc(m.flagA) + '" class="flag-mini me-1"/>' : "";
         const fb = m.flagB ? '<img src="' + esc(m.flagB) + '" class="flag-mini me-1"/>' : "";
-        h += '<div class="bracket-match"><div class="bm-team"><span>' + fa + esc(m.teamA || m.labelA || "") + "</span>" + (m.scoreA != null ? "<b>" + m.scoreA + "</b>" : "") + "</div>" +
-          '<div class="bm-team"><span>' + fb + esc(m.teamB || m.labelB || "") + "</span>" + (m.scoreB != null ? "<b>" + m.scoreB + "</b>" : "") + "</div></div>";
+        h += '<div class="bracket-match"><div class="bm-team"><span>' + fa + esc(m.teamA || m.labelA || "—") + "</span>" + (m.scoreA != null ? "<b>" + m.scoreA + "</b>" : "") + "</div>" +
+          '<div class="bm-team"><span>' + fb + esc(m.teamB || m.labelB || "—") + "</span>" + (m.scoreB != null ? "<b>" + m.scoreB + "</b>" : "") + "</div></div>";
       });
       h += "</div>";
     });
