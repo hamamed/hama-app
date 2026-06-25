@@ -396,9 +396,9 @@
     return 1;
   }
 
-  function badgeHtml(b, pts) {
+  function badgeHtml(b, pts, liveStatus) {
     if (b === "completed") return '<span class="badge wc-badge badge-done"><i class="fa-solid fa-flag-checkered me-1"></i>' + esc(t("legend.completed")) + (pts != null ? " (+" + pts + ")" : "") + "</span>";
-    if (b === "live") return '<span class="badge wc-badge badge-live"><span class="live-dot"></span>' + esc(t("badge.live")) + "</span>";
+    if (b === "live") return '<span class="badge wc-badge badge-live"><span class="live-dot"></span>' + esc(t("badge.live")) + (liveStatus && liveStatus !== "LIVE" ? " · " + esc(liveStatus) : "") + "</span>";
     if (b === "locked") return '<span class="badge wc-badge badge-locked"><i class="fa-solid fa-lock me-1"></i>' + esc(t("legend.locked")) + "</span>";
     return '<span class="badge wc-badge badge-open"><i class="fa-solid fa-unlock me-1"></i>' + esc(t("badge.open")) + "</span>";
   }
@@ -440,7 +440,7 @@
     }
 
     return '<div class="col-12 col-md-6"><div class="card wc-card h-100 border-0 match-card match-' + m.badge + '"><div class="card-body d-flex flex-column">' +
-      '<div class="d-flex justify-content-between align-items-center mb-3">' + badgeHtml(m.badge, m.badge === "completed" && m.pred ? m.pred.pts : null) +
+      '<div class="d-flex justify-content-between align-items-center mb-3">' + badgeHtml(m.badge, m.badge === "completed" && m.pred ? m.pred.pts : null, m.liveStatus) +
         '<small class="text-secondary">' + esc(fmtTime(m.kickoff)) + "</small></div>" +
       '<div class="d-flex align-items-center justify-content-between text-center mb-3">' + teamCol(m.teamA, m.flagA) +
         '<div class="vs px-2">' + mid + "</div>" + teamCol(m.teamB, m.flagB) + "</div>" +
@@ -530,7 +530,7 @@
         const byPlace = (n) => tiers.find((tt) => tt.place === n);
         return '<div class="podium mb-3">' + renderPlace(byPlace(2)) + renderPlace(byPlace(1)) + renderPlace(byPlace(3)) + "</div>";
       };
-      const liveTag = j.live ? '<div class="text-center small text-danger fw-bold mb-2"><span class="live-dot"></span> ' + esc(t("badge.live")) + "</div>" : "";
+      const liveTag = j.live ? '<div class="text-center small text-danger fw-bold mb-2"><span class="live-dot"></span> ' + esc(t("badge.live")) + (j.liveStatus && j.liveStatus !== "LIVE" ? " · " + esc(j.liveStatus) : "") + "</div>" : "";
       const podium = j.scored ? buildPodium(j.preds) : "";
 
       let h = liveTag + podium + '<div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr><th style="width:42px">#</th><th>' + esc(t("lb.player")) +
