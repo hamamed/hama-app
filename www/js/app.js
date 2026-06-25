@@ -9,6 +9,7 @@
   let isAdminUser = false;
   let communityNew = 0;
   let fixturesTodo = 0;
+  let fixturesDay = null;   // remembered day filter (survives the live re-render)
 
   async function checkAdmin() {
     try { const r = await API.me(); isAdminUser = !!r.isAdmin; communityNew = r.communityNew || 0; fixturesTodo = r.fixturesTodo || 0; }
@@ -260,7 +261,7 @@
     matches.forEach((m) => { m._day = dayKey(m.kickoff); counts[m._day] = (counts[m._day] || 0) + 1; });
     const days = Object.keys(counts).sort();
     const today = dayKey(Date.now());
-    let sel = counts[today] ? today : "all";
+    let sel = (fixturesDay && (fixturesDay === "all" || counts[fixturesDay])) ? fixturesDay : (counts[today] ? today : "all");
 
     const chip = (key, label, n) => '<button class="day-chip" data-day="' + key + '"><span class="day-chip-main">' + esc(label) +
       '</span><span class="day-chip-sub">' + n + " " + esc(n > 1 ? t("day.matches") : t("day.match")) + "</span></button>";
@@ -282,7 +283,7 @@
       document.querySelectorAll("#days .day-chip").forEach((c) => c.classList.toggle("active", c.dataset.day === sel));
     }
     document.querySelectorAll("#days .day-chip").forEach((c) =>
-      c.addEventListener("click", () => { sel = c.dataset.day; paint(); centerActive(true); }));
+      c.addEventListener("click", () => { sel = c.dataset.day; fixturesDay = sel; paint(); centerActive(true); }));
     paint();
     requestAnimationFrame(() => centerActive(false));
 
