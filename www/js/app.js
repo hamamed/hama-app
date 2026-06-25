@@ -10,6 +10,7 @@
   let communityNew = 0;
   let fixturesTodo = 0;
   let fixturesDay = null;   // remembered day filter (survives the live re-render)
+  let groupsTab = "groups"; // Groups | Knockout sub-tab
 
   async function checkAdmin() {
     try { const r = await API.me(); isAdminUser = !!r.isAdmin; communityNew = r.communityNew || 0; fixturesTodo = r.fixturesTodo || 0; }
@@ -583,11 +584,47 @@
   }
 
   // ---------- GROUPS ----------
+  function bracketHtml(b) {
+    if (!b || !b.rounds || !b.rounds.some((r) => r.matches.length)) {
+      return '<div class="card wc-card border-0"><div class="card-body text-center text-secondary py-5"><i class="fa-solid fa-sitemap fa-2x mb-3 d-block"></i>' + esc(t("ko.empty")) + "</div></div>";
+    }
+    let h = b.provisional ? '<p class="text-secondary small mb-3"><i class="fa-solid fa-circle-info me-1"></i>' + esc(t("ko.provisional")) + "</p>" : "";
+    h += '<div class="bracket">';
+    b.rounds.forEach((rd) => {
+      h += '<div class="bracket-col"><div class="bracket-round">' + esc(rd.name) + "</div>";
+      rd.matches.forEach((m) => {
+        const fa = m.flagA ? '<img src="' + esc(m.flagA) + '" class="flag-mini me-1"/>' : "";
+        const fb = m.flagB ? '<img src="' + esc(m.flagB) + '" class="flag-mini me-1"/>' : "";
+        h += '<div class="bracket-match"><div class="bm-team"><span>' + fa + esc(m.teamA || m.labelA || "") + "</span>" + (m.scoreA != null ? "<b>" + m.scoreA + "</b>" : "") + "</div>" +
+          '<div class="bm-team"><span>' + fb + esc(m.teamB || m.labelB || "") + "</span>" + (m.scoreB != null ? "<b>" + m.scoreB + "</b>" : "") + "</div></div>";
+      });
+      h += "</div>";
+    });
+    return h + "</div>";
+  }
+
   async function renderGroups() {
+    const head = '<div class="mb-3"><h2 class="fw-bold mb-0"><i class="fa-solid fa-table-cells-large text-accent me-2"></i>' + esc(t("st.title")) + "</h2></div>" +
+      '<div class="btn-group btn-group-sm mb-3"><button class="btn ' + (groupsTab === "groups" ? "btn-accent" : "btn-outline-secondary") + ' gt-g"><i class="fa-solid fa-layer-group me-1"></i>' + esc(t("ko.groups")) + "</button>" +
+      '<button class="btn ' + (groupsTab === "knockout" ? "btn-accent" : "btn-outline-secondary") + ' gt-k"><i class="fa-solid fa-sitemap me-1"></i>' + esc(t("ko.tab")) + "</button></div>";
+    const bindToggle = () => {
+      const g = document.querySelector(".gt-g"), k = document.querySelector(".gt-k");
+      if (g) g.addEventListener("click", () => { groupsTab = "groups"; renderGroups(); });
+      if (k) k.addEventListener("click", () => { groupsTab = "knockout"; renderGroups(); });
+    };
+
+    if (groupsTab === "knockout") {
+      setBody(head + '<div id="koWrap">' + loading() + "</div>");
+      bindToggle();
+      let b; try { b = await API.knockout(); } catch { b = null; }
+      const w = document.getElementById("koWrap");
+      if (w) w.innerHTML = b ? bracketHtml(b) : '<div class="text-center text-danger py-4">' + esc(t("netErr")) + "</div>";
+      return;
+    }
+
     let data; try { data = await API.standings(); } catch { return fail(); }
     const groups = (data.groups || []).filter((g) => g.rows.length);
-    const head = '<div class="mb-4"><h2 class="fw-bold mb-0"><i class="fa-solid fa-table-cells-large text-accent me-2"></i>' + esc(t("st.title")) + "</h2></div>";
-    if (!groups.length) return setBody(head + '<div class="card wc-card border-0"><div class="card-body text-center text-secondary py-5"><i class="fa-solid fa-table-list fa-2x mb-3 d-block"></i>' + esc(t("st.none")) + "</div></div>");
+    if (!groups.length) { setBody(head + '<div class="card wc-card border-0"><div class="card-body text-center text-secondary py-5"><i class="fa-solid fa-table-list fa-2x mb-3 d-block"></i>' + esc(t("st.none")) + "</div></div>"); bindToggle(); return; }
 
     const thead = "<tr><th>#</th><th>" + esc(t("st.team")) + '</th><th class="text-center">' + esc(t("st.p")) + '</th><th class="text-center">' + esc(t("st.w")) +
       '</th><th class="text-center">' + esc(t("st.d")) + '</th><th class="text-center">' + esc(t("st.l")) + '</th><th class="text-center">' + esc(t("st.gd")) + '</th><th class="text-center">' + esc(t("st.pts")) + "</th></tr>";
@@ -611,6 +648,7 @@
         data.thirds.map((r) => row({ ...r, rank: r.thirdRank }, false)).join("") + "</tbody></table></div></div></div>";
     }
     setBody(html);
+    bindToggle();
   }
 
   // ---------- RANKS ----------

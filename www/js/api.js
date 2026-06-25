@@ -41,6 +41,7 @@ window.API = (function () {
     predict: (matchId, scoreA, scoreB) => call("/predict", { method: "POST", body: { matchId, scoreA, scoreB } }),
     leaderboard: () => call("/leaderboard"),
     standings: () => call("/standings"),
+    knockout: () => call("/knockout"),
     profile: () => call("/profile"),
     champion: (champion) => call("/champion", { method: "POST", body: { champion } }),
     matchPreds: (id) => call("/match/" + id + "/predictions"),
